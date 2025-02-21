@@ -17,5 +17,5 @@ public enum Vehicle {
     /**
      * Immutable list of all vehicle types in defined order.
      */
-    public static final List<Vehicle> ALL = List.of(values());
+    public static final List<Vehicle> ALL = List.of(Vehicle.values());
 }
