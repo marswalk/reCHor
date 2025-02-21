@@ -3,7 +3,10 @@ package ch.epfl.rechor.journey;
 import java.util.List;
 
 /**
- * Les différents types de véhicules de transport public en Suisse.
+ * Enum of different Swiss public transport vehicle types.
+ *
+ * @author Guanting Wen (392412)
+ *
  */
 public enum Vehicle {
     TRAM,

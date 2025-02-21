@@ -7,10 +7,24 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Provides French-specific formatting utilities for times, stops, and journey legs.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
+ *
+ */
 public final class FormatterFr {
 
+    // private prevent instantiation
     private FormatterFr() {}
 
+    /**
+     * Formats a duration in hours and minutes (e.g. "2 h 15 min").
+     *
+     * @param duration the duration to format
+     * @return a formatted string representing the duration
+     */
     public static String formatDuration(Duration duration) {
         String durationString = new String();
         long hours = duration.toHours();
@@ -22,8 +36,12 @@ public final class FormatterFr {
         return durationString;
     }
 
-    ;
-
+    /**
+     * Formats a date-time using the pattern H'h'mm (hours and minutes).
+     *
+     * @param dateTime the date-time to format
+     * @return the formatted date-time string
+     */
     public static String formatTime(LocalDateTime dateTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("H'h'mm");
         return formatter.format(dateTime);
@@ -64,6 +82,12 @@ public final class FormatterFr {
         return type + " (" + formatDuration(footLeg.duration()) + ")";
     }
 
+    /**
+     * Formats a transport leg in French, showing departure, arrival, and platform information.
+     *
+     * @param leg the transport leg to format
+     * @return a formatted string for the transport leg
+     */
     public static String formatLeg(Journey.Leg.Transport leg) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatTime(leg.depTime()));
@@ -96,5 +120,4 @@ public final class FormatterFr {
     public static String formatRouteDestination(Journey.Leg.Transport transportLeg) {
         return transportLeg.route() + " Direction " + transportLeg.destination();
     }
-
 }

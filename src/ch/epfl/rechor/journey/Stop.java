@@ -5,7 +5,9 @@ import java.util.Objects;
 import ch.epfl.rechor.Preconditions;
 
 /**
- * Un arrêt de transport public.
+ * Public transport stop.
+ *
+ * @author Guanting Wen (392412)
  *
  * @param name         The name of the stop (station name if it's a platform).
  * @param platformName The name of the platform or track (null if it's a station).
