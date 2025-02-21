@@ -60,7 +60,7 @@ public record Journey(List<Leg> legs) {
 
     public Journey {
         Preconditions.checkArgument(!legs.isEmpty());
-        
+
         legs = List.copyOf(legs);
     }
 
