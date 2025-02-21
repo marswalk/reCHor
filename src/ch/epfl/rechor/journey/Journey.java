@@ -23,7 +23,7 @@ public record Journey(List<Leg> legs) {
         public record IntermediateStop(Stop stop, LocalDateTime arrTime, LocalDateTime depTime){
             public IntermediateStop {
                 Objects.requireNonNull(stop, "Stop must not be null");
-                Preconditions.checkArgument(!(arrTime.isBefore(depTime)));
+                Preconditions.checkArgument(!(depTime.isBefore(arrTime)));
             }
         }
 
@@ -60,7 +60,18 @@ public record Journey(List<Leg> legs) {
 
     public Journey {
         Preconditions.checkArgument(!legs.isEmpty());
+        for (int i = 1; i < legs.size(); i++) {
+            Leg previous = legs.get(i - 1);
+            Leg current = legs.get(i);
 
+            Preconditions.checkArgument(!current.depTime().isBefore(previous.arrTime()));
+
+            Preconditions.checkArgument(previous.arrStop().equals(current.depStop()));
+
+            boolean previousIsFoot = previous instanceof Leg.Foot;
+            boolean currentIsFoot = current instanceof Leg.Foot;
+            Preconditions.checkArgument(previousIsFoot != currentIsFoot);
+        }
         legs = List.copyOf(legs);
     }
 
