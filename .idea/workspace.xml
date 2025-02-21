@@ -5,13 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="59966cc7-7ef0-497e-a48f-97939a254c1a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/Foot.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/IntermediateStop.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/Journey.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/Journey.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/Leg.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/Stop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/Stop.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/Transport.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/Vehicle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ch/epfl/rechor/journey/Vehicle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ch/epfl/rechor/FormatterFr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ch/epfl/rechor/FormatterFr.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,21 +17,21 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "marswalk"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;marswalk&quot;
   }
-}]]></component>
+}</component>
   <component name="GithubPullRequestsUISettings"><![CDATA[{
   "selectedUrlAndAccountId": {
     "url": "https://github.com/marswalk/reCHor.git",
-    "accountId": "0c36228b-8797-4a05-8a5b-e9e6613982c2"
+    "accountId": "0bc93c3b-a295-4f17-a032-0d422d0d2e3f"
   }
 }]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="2tLUFw53VbCUx9Q3QIQ8MELXnch" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -44,9 +40,17 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Downloaded.Files.Path.Enabled": "false",
+    "Repository.Attach.Annotations": "false",
+    "Repository.Attach.JavaDocs": "false",
+    "Repository.Attach.Sources": "false",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true"
+    "kotlin-language-version-configured": "true",
+    "project.structure.last.edited": "Global Libraries",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "preferences.lookFeel"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
