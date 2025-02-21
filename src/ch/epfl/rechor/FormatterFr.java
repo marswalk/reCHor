@@ -25,7 +25,7 @@ public final class FormatterFr {
     ;
 
     public static String formatTime(LocalDateTime dateTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH'h'mm");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("H'h'mm");
         return formatter.format(dateTime);
     }
 
@@ -72,16 +72,17 @@ public final class FormatterFr {
         if (leg.depStop().platformName() != null) {
             sb.append(" (");
             sb.append(formatPlatformName(leg.depStop()));
-            sb.append(") ");
+            sb.append(")");
         }
-        sb.append("→ ");
+        sb.append(" → ");
         sb.append(leg.arrStop().name());
         sb.append(" (arr. ");
         sb.append(formatTime(leg.arrTime()));
         if (leg.arrStop().platformName() != null) {
+            sb.append(" ");
             sb.append(formatPlatformName(leg.arrStop()));
         }
-        sb.append(" )");
+        sb.append(")");
         return sb.toString();
     }
 
