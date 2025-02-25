@@ -183,7 +183,7 @@ public record Journey(List<Leg> legs) {
      * @return the departure stop
      */
     public Stop depStop() {
-        return legs.get(0).depStop();
+        return legs.getFirst().depStop();
     }
 
     /**
@@ -192,7 +192,7 @@ public record Journey(List<Leg> legs) {
      * @return the arrival stop
      */
     public Stop arrStop() {
-        return legs.get(legs.size() - 1).arrStop();
+        return legs.getLast().arrStop();
     }
 
     /**
