@@ -201,7 +201,7 @@ public record Journey(List<Leg> legs) {
      * @return the departure time
      */
     public LocalDateTime depTime() {
-        return legs.get(0).depTime();
+        return legs.getFirst().depTime();
     }
 
     /**
@@ -210,7 +210,7 @@ public record Journey(List<Leg> legs) {
      * @return the arrival time
      */
     public LocalDateTime arrTime() {
-        return legs.get(legs.size() - 1).arrTime();
+        return legs.getLast().arrTime();
     }
 
     /**
