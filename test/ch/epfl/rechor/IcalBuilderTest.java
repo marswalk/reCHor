@@ -28,15 +28,7 @@ public class IcalBuilderTest {
         builder.end(); // Closes VCALENDAR
         String output = builder.build();
 
-        String expected = ""
-                + "BEGIN:VCALENDAR\n"
-                + "PRODID:TestProd\n"
-                + "VERSION:2.0\n"
-                + "BEGIN:VEVENT\n"
-                + "SUMMARY:Event Summary\n"
-                + "DTSTART:20250225T103000\n"
-                + "END:VEVENT\n"
-                + "END:VCALENDAR\n";
+        String expected = "BEGIN:VCALENDAR\nPRODID:TestProd\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Event Summary\nDTSTART:20250225T103000\nEND:VEVENT\nEND:VCALENDAR\n";
         assertEquals(expected, output);
     }
 
@@ -90,6 +82,7 @@ public class IcalBuilderTest {
 
     /**
      * Test calling build() when there is an open component that has not been closed.
+     * Like when one forgets to closes one or more components.
      * This should also throw an IllegalArgumentException.
      */
     @Test

@@ -29,33 +29,64 @@ public final class IcalBuilder {
         END,
         PRODID,
         VERSION,
-        UID,
-        DTSTAMP,
+        UID, // random 32 hex characters uniquely identifying the event (given randomness of UUID method and 2^ 128 possibilities greatly exceeding number of eventys, the probability of UUID repetiition is negligible and hence uniquenesss is guaranteed ben yapping)
+        DTSTAMP, // which gives the date and time WHEN THE EVENT WAS CREATED (NOT THAT OF THE EVENT ITSELF!)
         DTSTART,
         DTEND,
         SUMMARY,
         DESCRIPTION;
     }
 
-    /**
-     * Our own line folding subroutine
-     */
+//    /**
+//     * Our own line folding subroutine
+//     */
+//    private void appendLine(String line) {
+//        if (line.length() <= 75) {
+//            sb.append(line).append("\n");
+//        } else {
+//            // first line is 75 chars
+//            String firstPart = line.substring(0, 75);
+//            sb.append(firstPart).append("\n");
+//            int index = 75;
+//            // 75 characters = space + 74 chars
+//            while (index < line.length()) {
+//                int end = Math.min(index + 74, line.length());
+//                sb.append(" ").append(line, index, end).append("\n");
+//                index = end;
+//            }
+//        }
+//    }
+
     private void appendLine(String line) {
-        if (line.length() <= 75) {
-            sb.append(line).append("\n");
-        } else {
-            // first line is 75 chars
-            String firstPart = line.substring(0, 75);
-            sb.append(firstPart).append("\n");
-            int index = 75;
-            // 75 characters = space + 74 chars
-            while (index < line.length()) {
-                int end = Math.min(index + 74, line.length());
-                sb.append(" ").append(line, index, end).append("\n");
-                index = end;
+        int lineLength = line.length();
+        int index = 0;
+        boolean firstLine = true;
+
+        while (index < lineLength) {
+            int remainingChars = lineLength - index;
+            int charsToTake = firstLine ? Math.min(75, remainingChars) : Math.min(74, remainingChars);
+            int endIndex = index + charsToTake;
+
+            // EDIT 3.2: Printing IcalConverter uses \n for each leg
+            // which is interpreted as an actual new line
+            // we changed it to a double \\n to "escape" and print the \n
+            // here then we need to treat "\\n" as 2 char instead of 3 in a line
+            if (endIndex < lineLength - 1 && line.substring(endIndex - 1, endIndex + 1).equals("\\n")) {
+                endIndex--;
             }
+
+            String part = line.substring(index, endIndex);
+            if (!firstLine) {
+                sb.append(" ");
+            }
+            sb.append(part).append("\n");
+
+            index = endIndex;
+            firstLine = false;
         }
     }
+
+
 
     /**
      * adds to the event being built a line
