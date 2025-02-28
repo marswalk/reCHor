@@ -15,10 +15,10 @@ public class Bits32_24_8 {
      */
     public static int pack(int bits24, int bits8) {
         // Check if bits24 fits in 24 bits (max value 0xFFFFFF)
-        Preconditions.checkArgument(bits24 <= 0xFFFFFF);
+        Preconditions.checkArgument(bits24 >= 0 && bits24 <= 0xFFFFFF);
 
         // Check if bits8 fits in 8 bits (max value 0xFF)
-        Preconditions.checkArgument(bits8 <= 0xFF);
+        Preconditions.checkArgument(bits8 >= 0 && bits8 <= 0xFF);
 
         // Shift bits24 to the left by 8 bits and combine with bits8
         return (bits24 << 8) | bits8;
