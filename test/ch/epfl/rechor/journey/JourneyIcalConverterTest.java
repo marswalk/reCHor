@@ -70,7 +70,7 @@ public class JourneyIcalConverterTest {
         List<Journey.Leg> legs = List.of(leg1, footLeg1, leg2, footLeg2, leg3, footLeg3, leg4, footLeg4, leg5);
         Journey journey = new Journey(legs);
 
-        String ical = JourneyIcalConverter.toIcaldendar(journey);
+        String ical = JourneyIcalConverter.toIcalendar(journey);
 
         String[] lines = ical.split("\r?\n"); // Split lines considering both CRLF and LF
 

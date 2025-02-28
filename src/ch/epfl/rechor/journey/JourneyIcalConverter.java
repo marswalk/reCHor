@@ -18,7 +18,7 @@ public final class JourneyIcalConverter {
      * @param journey the Journey to convert
      * @return the String which is the iCalendar for the Journey
      */
-    public static String toIcaldendar(Journey journey) {
+    public static String toIcalendar(Journey journey) {
         IcalBuilder builder = new IcalBuilder();
         builder.begin(IcalBuilder.Component.VCALENDAR);
         builder.add(IcalBuilder.Name.VERSION, "2.0");
