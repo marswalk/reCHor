@@ -7,11 +7,10 @@ import java.time.LocalDateTime;
 import java.util.StringJoiner;
 import java.util.UUID;
 
-public class JourneyIcalConverter {
+public final class JourneyIcalConverter {
 
     // Private so no instantiation (as with FormatterFr)
-    private JourneyIcalConverter() {
-    }
+    private JourneyIcalConverter() {}
 
     /**
      * Converts a Journey to an iCalendar format.
