@@ -1,5 +1,14 @@
 package ch.epfl.rechor;
 
+/**
+ * Utility class for packing and unpacking intervals of integers into a single int.
+ * The 24 most significant bits represent the start (inclusive) of the interval,
+ * and the 8 least significant bits represent its length.
+ * The class is non-instantiable.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
+ */
 public final class PackedRange {
 
     private PackedRange() {}

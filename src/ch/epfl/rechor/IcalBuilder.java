@@ -7,6 +7,10 @@ import java.util.List;
 
 /**
  * Event builder in iCalendar format
+ *
+ *  @author Guanting Wen (392412)
+ *  @author Ben Fall (373176)
+ *
  */
 public final class IcalBuilder {
 
@@ -29,7 +33,7 @@ public final class IcalBuilder {
         END,
         PRODID,
         VERSION,
-        UID, // random 32 hex characters uniquely identifying the event (given randomness of UUID method and 2^ 128 possibilities greatly exceeding number of eventys, the probability of UUID repetiition is negligible and hence uniquenesss is guaranteed ben yapping)
+        UID, // random 32 hex characters uniquely identifying the event
         DTSTAMP, // which gives the date and time WHEN THE EVENT WAS CREATED (NOT THAT OF THE EVENT ITSELF!)
         DTSTART,
         DTEND,
@@ -94,7 +98,7 @@ public final class IcalBuilder {
      * the constraint that no line of iCalendar data should exceed 75 characters.
      * @param name name of the "attribute" of the event in iCal format (SUMMARY, DESCRIPTION, etc.)
      * @param value the value assigned to the attribute
-     * @return
+     * @return the event being built
      */
     public IcalBuilder add(Name name, String value) {
         String line = name.name() + ":" + value;
@@ -108,7 +112,7 @@ public final class IcalBuilder {
      * date/time given, in the format specified in §2.1.6
      * @param name name of the "attribute" of the event in iCal format (DTSTART, DTEND, etc.)
      * @param dateTime the date and time to assign to the attribute
-     * @return
+     * @return the event being built
      */
     public IcalBuilder add(Name name, LocalDateTime dateTime) {
         // this time the hours is 2 digits HH instead of H (noticable when 0h... urgh)
@@ -123,7 +127,7 @@ public final class IcalBuilder {
      * starts a component by adding a line whose
      * name is BEGIN and the value is the name of the component given.
      * @param component
-     * @return
+     * @return begins a component
      */
     public IcalBuilder begin(Component component) {
         openComponents.add(component);
@@ -135,7 +139,7 @@ public final class IcalBuilder {
      * ends the last component that was previously started by begin but
      * not yet ended by a previous call to end, or throws an IllegalArgumentException if there are
      * none (see programming tips).
-     * @return
+     * @return ends the last opened component
      */
     public IcalBuilder end() {
         Preconditions.checkArgument(!openComponents.isEmpty());
@@ -148,7 +152,7 @@ public final class IcalBuilder {
      * returns the character string in iCalendar format representing the
      * event being built, or throws an IllegalArgumentException if a component that was started by
      * a call to begin has not, at this stage, been ended by a call to end.
-     * @return
+     * @return String in iCalendar format
      */
     public String build() {
         Preconditions.checkArgument(openComponents.isEmpty());

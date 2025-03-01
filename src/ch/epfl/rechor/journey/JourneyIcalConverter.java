@@ -7,6 +7,14 @@ import java.time.LocalDateTime;
 import java.util.StringJoiner;
 import java.util.UUID;
 
+/**
+ * Converts a Journey to an iCalendar format.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
+ *
+ */
+
 public final class JourneyIcalConverter {
 
     // Private so no instantiation (as with FormatterFr)
