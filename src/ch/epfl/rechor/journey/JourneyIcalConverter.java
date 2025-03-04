@@ -30,7 +30,7 @@ public final class JourneyIcalConverter {
         IcalBuilder builder = new IcalBuilder();
         builder.begin(IcalBuilder.Component.VCALENDAR);
         builder.add(IcalBuilder.Name.VERSION, "2.0");
-        builder.add(IcalBuilder.Name.PRODID, "reCHor");
+        builder.add(IcalBuilder.Name.PRODID, "ReCHor");
         builder.begin(IcalBuilder.Component.VEVENT);
         // example: EEBABA70-83B9-4342-A046-BC949F562DC0 (hyphens are in fixed positions, not characters)
         // 2^4^32=2^128 hence 32 hex characters  (as 128 bit value represented)

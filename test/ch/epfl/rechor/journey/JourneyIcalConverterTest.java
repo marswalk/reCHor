@@ -79,7 +79,7 @@ public class JourneyIcalConverterTest {
         int lineIdx = 0;
         assertEquals("BEGIN:VCALENDAR", lines[lineIdx++]);
         assertEquals("VERSION:2.0", lines[lineIdx++]);
-        assertEquals("PRODID:reCHor", lines[lineIdx++]);
+        assertEquals("PRODID:ReCHor", lines[lineIdx++]);
         assertEquals("BEGIN:VEVENT", lines[lineIdx++]);
 
         // Validate UID format (source: Deepseek R1)

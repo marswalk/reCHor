@@ -28,7 +28,7 @@ public class IcalBuilderTest {
         builder.end(); // Closes VCALENDAR
         String output = builder.build();
 
-        String expected = "BEGIN:VCALENDAR\nPRODID:TestProd\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Event Summary\nDTSTART:20250225T103000\nEND:VEVENT\nEND:VCALENDAR\n";
+        String expected = "BEGIN:VCALENDAR\r\nPRODID:TestProd\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Event Summary\r\nDTSTART:20250225T103000\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
         assertEquals(expected, output);
     }
 
@@ -44,7 +44,7 @@ public class IcalBuilderTest {
         builder.add(IcalBuilder.Name.SUMMARY, value);
         String output = builder.build();
 
-        String expected = "SUMMARY:" + value + "\n";
+        String expected = "SUMMARY:" + value + "\r\n";
         assertEquals(expected, output);
     }
 
@@ -64,7 +64,7 @@ public class IcalBuilderTest {
         String originalLine = "SUMMARY:" + value; // Total length 76.
         String firstPart = originalLine.substring(0, 75);
         String remainder = originalLine.substring(75);
-        String expected = firstPart + "\n" + " " + remainder + "\n";
+        String expected = firstPart + "\r\n" + " " + remainder + "\r\n";
         assertEquals(expected, output);
     }
 

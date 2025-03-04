@@ -83,7 +83,7 @@ public final class IcalBuilder {
             if (!firstLine) {
                 sb.append(" ");
             }
-            sb.append(part).append("\n");
+            sb.append(part).append("\r\n"); // Use CRLF instead of LF
 
             index = endIndex;
             firstLine = false;
