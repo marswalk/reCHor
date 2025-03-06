@@ -29,16 +29,16 @@ public final class IcalBuilder {
      * Name of a line with the following values
      */
     public enum Name {
-        BEGIN,
-        END,
-        PRODID,
-        VERSION,
-        UID, // random 32 hex characters uniquely identifying the event
+        BEGIN, // This marks the beginning of a component
+        END, // This marks the end of a component
+        PRODID, // The identifier for the product that created the calendar
+        VERSION, // The version of the iCalendar format
+        UID, // random 32 hex characters uniquely identifying the event (given randomness of UUID method and 2^128 possibilities, probability of UUID repetition is negligible and we can consider it to be unique)
         DTSTAMP, // which gives the date and time WHEN THE EVENT WAS CREATED (NOT THAT OF THE EVENT ITSELF!)
-        DTSTART,
-        DTEND,
-        SUMMARY,
-        DESCRIPTION;
+        DTSTART, // The start date and time of the event
+        DTEND, // The end date and time of the event
+        SUMMARY, // A brief summary or title of the event
+        DESCRIPTION; // A detailed description of the event (as per format given using FormatterFr)
     }
 
 //    /**
@@ -131,7 +131,7 @@ public final class IcalBuilder {
      */
     public IcalBuilder begin(Component component) {
         openComponents.add(component);
-        appendLine(Name.BEGIN.name() + ":" + component.name());
+        add(Name.BEGIN, component.name());
         return this;
     }
 
@@ -144,7 +144,7 @@ public final class IcalBuilder {
     public IcalBuilder end() {
         Preconditions.checkArgument(!openComponents.isEmpty());
         Component lastComponent = openComponents.removeLast();
-        appendLine(Name.END.name() + ":" + lastComponent.name());
+        add(Name.END, lastComponent.name());
         return this;
     }
 
