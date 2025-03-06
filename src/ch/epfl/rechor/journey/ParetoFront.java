@@ -8,7 +8,6 @@ import java.util.function.LongConsumer;
  * Represents an immutable Pareto frontier of optimization criteria tuples.
  * Tuples are stored in lexicographical order (ascending arrival minutes, ascending changes,
  * ascending payload). Each tuple is packed into a {@code long} using criteria encoding conventions.
- *
  * Packed criteria tuple format, packed in same format as PackedCriteria
  *
  * @see ParetoFront.Builder
@@ -134,7 +133,8 @@ public final class ParetoFront {
             // Create a new array with the same capacity as the original
             this.tuples = new long[that.tuples.length];
 
-            // Copy all elements from the original front array
+            // Copy all elements from the original front array (we are just copying the not null elements (efficiency?)
+            // but the physical size is the same as the original)
             if (this.size > 0) {
                 System.arraycopy(that.tuples, 0, this.tuples, 0, that.size);
             }
@@ -159,84 +159,202 @@ public final class ParetoFront {
         }
 
         /**
-         * Adds a packed tuple to the frontier if it is not dominated by existing entries.
-         * Removes any entries dominated by the new tuple.
+         * Adds a tuple of packed criteria to the Pareto front.
+         * <p>
+         * This method adds the given packed tuple to the Pareto front only if it is not
+         * dominated by any existing tuple in the front. If added, all tuples in the array tuples
+         * that are dominated by this new tuple are removed.
+         * <p>
+         * The tuples in the Pareto front are always maintained in lexicographical order.
          *
-         * @param packedTuple Packed criteria (arrival time, changes, payload)
-         * @return This builder for method chaining
+         * @param packedTuple the packed criteria tuple to add to the Pareto front
+         * @return this builder, to enable method chaining
          */
         public Builder add(long packedTuple) {
-            // Step 1: Find insertion index using binary search
-            int idx = Arrays.binarySearch(tuples, 0, size, packedTuple);
-            if (idx >= 0) return this; // Exact match exists (no action needed)
-            idx = - (idx + 1); // Calculate insertion point
-
-            // Step 2: Check dominance by existing elements before insertion point
-            for (int i = 0; i < idx; i++) {
-                if (dominates(tuples[i], packedTuple)) {
-                    return this; // New tuple is dominated; exit
-                }
+            // If the tuples is empty, simply add the tuple
+            if (size == 0) {
+                ensureCapacity(1);
+                tuples[0] = packedTuple;
+                size = 1;
+                return this;
             }
 
-            // Step 3: Remove elements after idx that are dominated by the new tuple
-            int newSize = idx;
-            for (int i = idx; i < size; i++) {
-                if (!dominates(packedTuple, tuples[i])) {
-                    // Copy remaining non-dominated elements
-                    int remaining = size - i;
-                    System.arraycopy(tuples, i, tuples, newSize, remaining);
-                    newSize += remaining;
+            // Find the position where the new tuple should be inserted
+            // by searching for the first element greater than the new tuple
+            int insertPos = 0;
+            boolean isDominated = false;
+
+            // First, check if the new tuple is dominated by any existing tuple
+            // We only need to check tuples that come before it in lexicographical order
+            while (insertPos < size && tuples[insertPos] <= packedTuple) {
+                // If an existing tuple dominates or equals the new one, no need to add it
+                if (PackedCriteria.dominatesOrIsEqual(tuples[insertPos], packedTuple)) {
+                    isDominated = true;
                     break;
                 }
+                insertPos++;
             }
 
-            // Step 4: Expand array if necessary
-            ensureCapacity(newSize + 1);
+            // If the new tuple is dominated, don't add it
+            if (isDominated) {
+                return this;
+            }
 
-            // Step 5: Insert new tuple and update size
-            System.arraycopy(tuples, idx, tuples, idx + 1, newSize - idx);
-            tuples[idx] = packedTuple;
-            size = newSize + 1;
+            // Now we need to remove any tuples that are dominated by the new one
+            // These will be tuples that come after the insertion position
+            int writePos = insertPos;
+            for (int readPos = insertPos; readPos < size; readPos++) {
+                // Keep only tuples that are not dominated by the new one
+                if (!PackedCriteria.dominatesOrIsEqual(packedTuple, tuples[readPos])) {
+                    if (writePos != readPos) {
+                        tuples[writePos] = tuples[readPos];
+                    }
+                    writePos++;
+                }
+            }
+
+            // Update the size after removing dominated tuples
+            int newSize = writePos + 1; // +1 for the new tuple
+
+            // Ensure we have enough capacity for the new tuple
+            ensureCapacity(newSize);
+
+            // Shift elements to make room for the new tuple
+            for (int i = size - 1; i >= insertPos; i--) {
+                tuples[i + 1] = tuples[i];
+            }
+
+            // Insert the new tuple
+            tuples[insertPos] = packedTuple;
+            size = newSize;
 
             return this;
         }
 
-
-
-
-        // --- Helper Methods ---
-
+        // Own helper methods for add method
         /**
-         * Checks if tuple `a` dominates tuple `b` (a.arrival <= b.arrival and a.changes <= b.changes).
-         */
-        private boolean dominates(long a, long b) {
-            int aArrival = (int) (a >> 40) & 0xFFFFFF; // Extract arrival from packed long
-            int bArrival = (int) (b >> 40) & 0xFFFFFF;
-            if (aArrival > bArrival) return false;
-
-            int aChanges = (int) (a >> 24) & 0xFFFF; // Extract changes from packed long
-            int bChanges = (int) (b >> 24) & 0xFFFF;
-            return aChanges <= bChanges;
-        }
-
-        /**
-         * Ensures the internal array has sufficient capacity.
+         * Ensures that the internal array has at least the specified capacity.
+         * If not, the array is resized to 1.5 times the required capacity.
+         *
+         * @param minCapacity the minimum capacity needed
          */
         private void ensureCapacity(int minCapacity) {
-            if (minCapacity > tuples.length) {
-                int newCapacity = Math.max(tuples.length * 2, minCapacity);
+            if (tuples.length < minCapacity) {
+                int newCapacity = Math.max(minCapacity, tuples.length * 3 / 2);
                 tuples = Arrays.copyOf(tuples, newCapacity);
             }
         }
 
-
-
-
-
+        /**
+         * Adds a tuple with the given arrival time, number of changes, and payload to the Pareto front.
+         * <p>
+         * The tuple is only added if it is not dominated by any existing tuple in the front.
+         * All tuples in the front that are dominated by this new tuple are removed.
+         *
+         * @param arrMins the arrival time in minutes after midnight
+         * @param changes the number of changes
+         * @param payload the payload associated with this tuple
+         * @return this builder, to enable method chaining
+         * @throws IllegalArgumentException if the arrival time or changes are invalid
+         */
+        public Builder add(int arrMins, int changes, int payload) {
+            long packedTuple = PackedCriteria.pack(arrMins, changes, payload);
+            return add(packedTuple);
+        }
 
         /**
-         * Builds an immutable {@code ParetoFront} from the current state.
-         * @return Immutable Pareto frontier
+         * Adds all tuples from the given builder to this builder.
+         * <p>
+         * Each tuple is only added if it is not dominated by any existing tuple in this front.
+         * Any tuples in this front that are dominated by a newly added tuple are removed.
+         *
+         * @param that the builder whose tuples should be added to this one
+         * @return this builder, to enable method chaining
+         */
+        public Builder addAll(Builder that) {
+            // If the other builder is empty, nothing to add
+            if (that.isEmpty()) {
+                return this;
+            }
+            // If this builder is empty, just copy all tuples from the other builder
+            if (isEmpty()) {
+                ensureCapacity(that.size);
+                System.arraycopy(that.tuples, 0, tuples, 0, that.size);
+                size = that.size;
+                return this;
+            }
+
+            // Otherwise, add each tuple individually
+            for (int i = 0; i < that.size; i++) {
+                add(that.tuples[i]);
+            }
+
+            return this;
+        }
+
+        /**
+         * Returns true if all tuples in the given builder, when assigned the specified
+         * departure time, are dominated by at least one tuple in this builder.
+         *
+         * @param that the builder whose tuples should be checked for domination
+         * @param depMins the departure time in minutes after midnight to assign to all tuples
+         * @return true if all tuples in the given builder are dominated
+         */
+        public boolean fullyDominates(Builder that, int depMins) {
+            // If the other builder is empty, it is trivially dominated
+            if (that.isEmpty()) {
+                return true;
+            }
+
+            // If this builder is empty, it cannot dominate anything
+            if (isEmpty()) {
+                return false;
+            }
+
+            // Check each tuple in the other builder
+            for (int i = 0; i < that.size; i++) {
+                long thatTuple = that.tuples[i];
+
+                // Add departure time to the tuple if it doesn't have one
+                if (!PackedCriteria.hasDepMins(thatTuple)) {
+                    thatTuple = PackedCriteria.withDepMins(thatTuple, depMins);
+                }
+
+                // Check if this tuple is dominated by any tuple in this builder
+                boolean isDominated = false;
+                for (int j = 0; j < size; j++) {
+                    if (PackedCriteria.dominatesOrIsEqual(tuples[j], thatTuple)) {
+                        isDominated = true;
+                        break;
+                    }
+                }
+
+                // If any tuple is not dominated, return false
+                if (!isDominated) {
+                    return false;
+                }
+            }
+
+            // All tuples are dominated
+            return true;
+        }
+
+        /**
+         * Applies the given action to each tuple in this builder.
+         *
+         * @param action the action to apply to each tuple
+         */
+        public void forEach(LongConsumer action) {
+            for (int i = 0; i < size; i++) {
+                action.accept(tuples[i]);
+            }
+        }
+
+        /**
+         * Builds and returns an immutable Pareto front containing all the tuples
+         * currently in this builder.
+         *
+         * @return immutable Pareto front
          */
         public ParetoFront build() {
             return new ParetoFront(java.util.Arrays.copyOf(tuples, size));
