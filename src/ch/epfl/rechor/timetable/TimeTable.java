@@ -8,39 +8,39 @@ import java.time.LocalDate;
 public interface TimeTable {
 
     /**
-     * @return indexed stations data
+     * @return indexed stations data for the timetable
      */
     Stations stations();
 
     /**
-     * @return indexed station aliases
+     * @return indexed station aliases (same as stations() but with aliases)
      */
     StationAliases stationAliases();
 
     /**
-     * @return indexed platforms data
+     * @return indexed track/platforms data of the timetable
      */
     Platforms platforms();
 
     /**
-     * @return indexed routes data
+     * @return indexed routes data of the schedule
      */
     Routes routes();
 
     /**
-     * @return indexed transfers data
+     * @return indexed transfers data of the schedule
      */
     Transfers transfers();
 
     /**
      * @param date date to query
-     * @return trips active on given date
+     * @return trips active on given date (indexed by route)
      */
     Trips tripsFor(LocalDate date);
 
     /**
      * @param date date to query
-     * @return connections active on given date
+     * @return connections active on given date （again indexed)
      */
     Connections connectionsFor(LocalDate date);
 
@@ -53,6 +53,14 @@ public interface TimeTable {
         return stopId < stations().size();
     }
 
+    // If such an index is less than the number of stations existing in the timetable,
+    // then it represents a station index. Otherwise, it represents a track or platform index,
+    // which can be calculated by subtracting the number of stations existing in the timetable
+    // from the stop index.
+    //
+    // For example, if there are 1000 stations and 2000 tracks or platforms, stop index 500
+    // represents station index 500, while stop index 1700 represents track/platform index 700.
+
     /**
      * @param stopId stop ID to check
      * @return true if ID represents a platform
@@ -60,6 +68,7 @@ public interface TimeTable {
     default boolean isPlatformId(int stopId) {
         return !isStationId(stopId);
     }
+    // as either a platform/track or a station...
 
     /**
      * @param stopId stop ID to convert
@@ -68,13 +77,17 @@ public interface TimeTable {
     default int stationId(int stopId) {
         return isStationId(stopId) ? stopId : platforms().stationId(stopId - stations().size());
     }
+    // stationId is the same as stopId if it is a station, otherwise (if it is a platform/track), it therefore
+    // represents a track/platform index which can be calculated by subtracting the number of stations existing
+    // in the timetable from the stop index (stopId).
 
     /**
      * @param stopId stop ID to check
-     * @return platform name or null for stations
+     * @return platform/track name or null for stations
      */
     default String platformName(int stopId) {
         return isStationId(stopId) ? null :
                 platforms().name(stopId - stations().size());
     }
+    // returns null if it is a station and otherwise the track/platform name from the indexed platforms data.
 }
