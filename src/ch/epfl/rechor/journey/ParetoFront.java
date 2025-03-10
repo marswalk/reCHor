@@ -358,6 +358,11 @@ public final class ParetoFront {
          */
         public ParetoFront build() {
             return new ParetoFront(java.util.Arrays.copyOf(tuples, size));
+            // The builder must guarantee that the returned ParetoFront is immutable.
+            // In particular, the method build must guarantee this, by passing to the constructor a copy of its
+            // internal array.
+            // size is the logical size of the boundary -> it makes sense to only copy the elements that are actually
+            // in the boundary
         }
     }
 }
