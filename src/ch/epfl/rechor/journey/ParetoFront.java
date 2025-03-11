@@ -188,61 +188,40 @@ public final class ParetoFront {
             // Find the position where the new tuple should be inserted
             // by searching for the first element greater than the new tuple
             int insertPos = 0;
-            boolean isDominated = false;
 
             // First, check if the new tuple is dominated by any existing tuple
             // We only need to check tuples that come before it in lexicographical order
+            System.out.println("Checking if new tuple is dominated by an existing tuple...");
             while (insertPos < size && tuples[insertPos] <= packedTuple) {
-                System.out.println("Comparing: " + formatTuple(tuples[insertPos]) +
+                System.out.print("Comparing index " + insertPos + " tuple: " + formatTuple(tuples[insertPos]) +
                         " with new tuple: " + formatTuple(packedTuple));
                 // If an existing tuple dominates or equals the new one, no need to add it
                 if (PackedCriteria.dominatesOrIsEqual(tuples[insertPos], packedTuple)) {
-                    isDominated = true;
-                    System.out.println("New tuple is dominated by existing tuple at position " + insertPos);
-                    break;
+                    // If the new tuple is dominated, don't add it
+                    System.out.println("... dominated. New tuple not added");
+                    return this;
                 }
+                System.out.println("... not dominated");
                 insertPos++;
             }
-
-            // If the new tuple is dominated, don't add it
-            if (isDominated) {
-                System.out.println("Tuple not added because it's dominated");
-                return this;
-            }
-
-            System.out.println("New tuple is not dominated. Will be inserted at position: " + insertPos);
+            System.out.println("New tuple is not dominated. Will be inserted at index: " + insertPos);
 
             // Now that we are sure the new tuple will be added
             // But we will also remove any tuples that are dominated by the new one
             // These will be tuples that come after the insertion position
             int writePos = insertPos;
-            boolean foundNonDominated = false;
-
-            System.out.println("Checking for tuples dominated by the new tuple...");
-            // Find the first non-dominated tuple after the insertion position
-            for (int readPos = insertPos; readPos < size && !foundNonDominated; readPos++) {
-                System.out.println("Checking if new tuple dominates: " + formatTuple(tuples[readPos]));
+            System.out.println("Checking for tuples dominated by the new tuple to be removed...");
+            for (int readPos = insertPos; readPos < size; readPos++) {
+                System.out.print("Comparing index " + readPos + " tuple: " + formatTuple(tuples[readPos]) +
+                        " with new tuple: " + formatTuple(packedTuple));
                 if (!PackedCriteria.dominatesOrIsEqual(packedTuple, tuples[readPos])) {
-                    // Found a non-dominated tuple
-                    foundNonDominated = true;
-                    writePos = readPos;
-                    System.out.println("Found non-dominated tuple at position " + readPos);
+                    System.out.println("... not dominated");
+                    tuples[writePos++] = tuples[readPos];
                 } else {
-                    System.out.println("Tuple at position " + readPos + " is dominated and will be removed");
+                    System.out.println("... dominated and will be removed");
                 }
             }
-
-            // If we found a non-dominated tuple, the remaining tuples are also non-dominated
-            // we shift the remaining elements forward (left) (overriding the dominated ones)
-            if (foundNonDominated) {
-                System.out.println("Shifting non-dominated elements from position " + writePos +
-                        " to position " + insertPos);
-                System.arraycopy(tuples, writePos, tuples, insertPos, size - writePos);
-                size = insertPos + size - writePos;
-            } else {
-                System.out.println("All remaining tuples are dominated. New size will be: " + insertPos);
-                size = insertPos;
-            }
+            size = writePos;
 
             // Add the new tuple at the insertPosition, by shifting the elements to the right first
             ensureCapacity(size + 1);
@@ -421,18 +400,19 @@ public final class ParetoFront {
         private String debugArrayToString() {
             StringBuilder sb = new StringBuilder("[");
             for (int i = 0; i < size; i++) {
-                sb.append(formatTuple(tuples[i]));
+                sb.append("\n\t").append(i).append(". ").append(formatTuple(tuples[i]));
                 if (i < size - 1) sb.append(", ");
             }
-            return sb.append("] (size: ").append(size).append(")").toString();
+            return sb.append("\n] (size: ").append(size).append(")").toString();
         }
 
-        // Helper method to format a tuple for debugging
-        private String formatTuple(long tuple) {
-            return String.format("{arr:%s, chg:%d, pay:%d}",
+        private static String formatTuple(long tuple) {
+            return String.format("%s%s/%dchg",
+                    PackedCriteria.hasDepMins(tuple)
+                            ? formatTime(PackedCriteria.depMins(tuple)) + "-"
+                            : "",
                     formatTime(PackedCriteria.arrMins(tuple)),
-                    PackedCriteria.changes(tuple),
-                    PackedCriteria.payload(tuple));
+                    PackedCriteria.changes(tuple));
         }
     }
 }
