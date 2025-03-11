@@ -9,7 +9,8 @@ import java.util.function.LongConsumer;
  * Tuples are stored in lexicographical order (ascending arrival minutes, ascending changes,
  * ascending payload). Each tuple is packed into a {@code long} using criteria encoding conventions.
  * Packed criteria tuple format, packed in same format as PackedCriteria
- *
+ * @author Guanting Wen
+ * @author Ben Fall
  * @see ParetoFront.Builder
  */
 public final class ParetoFront {
@@ -171,11 +172,16 @@ public final class ParetoFront {
          * @return this builder, to enable method chaining
          */
         public Builder add(long packedTuple) {
+            System.out.println("\n===== Adding tuple: " + formatTuple(packedTuple) + " =====");
+            System.out.println("Current Pareto front before adding: " + debugArrayToString());
+
             // If the tuples is empty, simply add the tuple
             if (size == 0) {
                 ensureCapacity(1);
                 tuples[0] = packedTuple;
                 size = 1;
+                System.out.println("Empty front, added as first element");
+                System.out.println("Updated Pareto front: " + debugArrayToString());
                 return this;
             }
 
@@ -187,9 +193,12 @@ public final class ParetoFront {
             // First, check if the new tuple is dominated by any existing tuple
             // We only need to check tuples that come before it in lexicographical order
             while (insertPos < size && tuples[insertPos] <= packedTuple) {
+                System.out.println("Comparing: " + formatTuple(tuples[insertPos]) +
+                        " with new tuple: " + formatTuple(packedTuple));
                 // If an existing tuple dominates or equals the new one, no need to add it
                 if (PackedCriteria.dominatesOrIsEqual(tuples[insertPos], packedTuple)) {
                     isDominated = true;
+                    System.out.println("New tuple is dominated by existing tuple at position " + insertPos);
                     break;
                 }
                 insertPos++;
@@ -197,37 +206,51 @@ public final class ParetoFront {
 
             // If the new tuple is dominated, don't add it
             if (isDominated) {
+                System.out.println("Tuple not added because it's dominated");
                 return this;
             }
 
-            // Now we need to remove any tuples that are dominated by the new one
+            System.out.println("New tuple is not dominated. Will be inserted at position: " + insertPos);
+
+            // Now that we are sure the new tuple will be added
+            // But we will also remove any tuples that are dominated by the new one
             // These will be tuples that come after the insertion position
             int writePos = insertPos;
-            for (int readPos = insertPos; readPos < size; readPos++) {
-                // Keep only tuples that are not dominated by the new one
+            boolean foundNonDominated = false;
+
+            System.out.println("Checking for tuples dominated by the new tuple...");
+            // Find the first non-dominated tuple after the insertion position
+            for (int readPos = insertPos; readPos < size && !foundNonDominated; readPos++) {
+                System.out.println("Checking if new tuple dominates: " + formatTuple(tuples[readPos]));
                 if (!PackedCriteria.dominatesOrIsEqual(packedTuple, tuples[readPos])) {
-                    if (writePos != readPos) {
-                        tuples[writePos] = tuples[readPos];
-                    }
-                    writePos++;
+                    // Found a non-dominated tuple
+                    foundNonDominated = true;
+                    writePos = readPos;
+                    System.out.println("Found non-dominated tuple at position " + readPos);
+                } else {
+                    System.out.println("Tuple at position " + readPos + " is dominated and will be removed");
                 }
             }
 
-            // Update the size after removing dominated tuples
-            int newSize = writePos + 1; // +1 for the new tuple
-
-            // Ensure we have enough capacity for the new tuple
-            ensureCapacity(newSize);
-
-            // Shift elements to make room for the new tuple
-            for (int i = size - 1; i >= insertPos; i--) {
-                tuples[i + 1] = tuples[i];
+            // If we found a non-dominated tuple, the remaining tuples are also non-dominated
+            // we shift the remaining elements forward (left) (overriding the dominated ones)
+            if (foundNonDominated) {
+                System.out.println("Shifting non-dominated elements from position " + writePos +
+                        " to position " + insertPos);
+                System.arraycopy(tuples, writePos, tuples, insertPos, size - writePos);
+                size = insertPos + size - writePos;
+            } else {
+                System.out.println("All remaining tuples are dominated. New size will be: " + insertPos);
+                size = insertPos;
             }
 
-            // Insert the new tuple
+            // Add the new tuple at the insertPosition, by shifting the elements to the right first
+            ensureCapacity(size + 1);
+            System.arraycopy(tuples, insertPos, tuples, insertPos + 1, size - insertPos);
             tuples[insertPos] = packedTuple;
-            size = newSize;
+            size++;
 
+            System.out.println("Final Pareto front after adding: " + debugArrayToString());
             return this;
         }
 
@@ -315,10 +338,8 @@ public final class ParetoFront {
             for (int i = 0; i < that.size; i++) {
                 long thatTuple = that.tuples[i];
 
-                // Add departure time to the tuple if it doesn't have one
-                if (!PackedCriteria.hasDepMins(thatTuple)) {
-                    thatTuple = PackedCriteria.withDepMins(thatTuple, depMins);
-                }
+                // Assign the given departure time to the tuple
+                thatTuple = PackedCriteria.withDepMins(thatTuple, depMins);
 
                 // Check if this tuple is dominated by any tuple in this builder
                 boolean isDominated = false;
@@ -358,6 +379,55 @@ public final class ParetoFront {
          */
         public ParetoFront build() {
             return new ParetoFront(java.util.Arrays.copyOf(tuples, size));
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("ParetoFront.Builder[");
+            if (size == 0) {
+                sb.append("empty");
+            } else {
+                sb.append("\n");
+                for (int i = 0; i < size; i++) {
+                    long tuple = tuples[i];
+                    sb.append("  • ");
+
+                    // Show departure time if present (non-zero)
+                    System.out.println("Has departure time:" + PackedCriteria.hasDepMins(tuple));
+                    if (PackedCriteria.hasDepMins(tuple)) {
+                        int depMins = PackedCriteria.depMins(tuple);
+                        sb.append("Departure: ").append(formatTime(depMins)).append(", ");
+                    }
+
+                    sb.append("Arrival: ").append(formatTime(PackedCriteria.arrMins(tuple)))
+                      .append(", Changes: ").append(PackedCriteria.changes(tuple))
+                      .append(", Payload: ").append(PackedCriteria.payload(tuple))
+                      .append("\n");
+                }
+            }
+            return sb.append("]").toString();
+        }
+
+        private static String formatTime(int minutes) {
+            return String.format("%02d:%02d", minutes / 60, minutes % 60);
+        }
+
+        // Helper method for debugging
+        private String debugArrayToString() {
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < size; i++) {
+                sb.append(formatTuple(tuples[i]));
+                if (i < size - 1) sb.append(", ");
+            }
+            return sb.append("] (size: ").append(size).append(")").toString();
+        }
+
+        // Helper method to format a tuple for debugging
+        private String formatTuple(long tuple) {
+            return String.format("{arr:%s, chg:%d, pay:%d}",
+                    formatTime(PackedCriteria.arrMins(tuple)),
+                    PackedCriteria.changes(tuple),
+                    PackedCriteria.payload(tuple));
         }
     }
 }
