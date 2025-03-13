@@ -18,7 +18,7 @@ package ch.epfl.rechor.timetable.mapped;
  * int STATION_ID = 1;
  *
  * Structure STRUCTURE = new Structure(
- *     field(NAME_ID, U16),
+ *     field(NAME_ID, U16),    // NAME_ID is the index of the platform name in the string table
  *     field(STATION_ID, U16));
  * </pre>
  */
@@ -80,6 +80,7 @@ public final class Structure {
     public static Field field(int index, FieldType type) {
         return new Field(index, type);
     }
+    // the whole point of Field field is so that you can omit new Field() when creating a new Field instance ?
 
     /**
      * Constructs a structure with the given fields.
