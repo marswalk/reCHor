@@ -1,7 +1,26 @@
 package ch.epfl.rechor.timetable.mapped;
 
 /**
- * Class to facilitate the description of the structure of flattened data.
+ * Facilitates the description of flattened data structures.
+ * <p>
+ * This class provides tools to define the structure of data stored in a flattened format,
+ * where different types of data are stored in arrays with each array containing all values
+ * of a given type. The structure defines the sequence and types of fields that make up
+ * each element in the flattened data.
+ * <p>
+ * A structure is composed of fields, each with an index and a type (U8, U16, or S32).
+ * The class calculates the byte offsets of each field and the total size of the structure,
+ * which can be used to efficiently navigate flattened data arrays.
+ * <p>
+ * Example usage:
+ * <pre>
+ * int NAME_ID = 0;
+ * int STATION_ID = 1;
+ *
+ * Structure STRUCTURE = new Structure(
+ *     field(NAME_ID, U16),
+ *     field(STATION_ID, U16));
+ * </pre>
  */
 public final class Structure {
 

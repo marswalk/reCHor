@@ -3,7 +3,28 @@ package ch.epfl.rechor.timetable.mapped;
 import java.nio.ByteBuffer;
 
 /**
- * Represents a structured buffer for accessing flattened data using a predefined structure.
+ * Provides access to flattened data using a predefined structure.
+ * <p>
+ * This class wraps a ByteBuffer containing raw flattened data and allows access to
+ * its elements according to a structure definition. It handles the conversion between
+ * raw bytes and their typed representation (U8, U16, S32) and manages the navigation
+ * within the buffer.
+ * <p>
+ * The buffer contains multiple elements of the same structure arranged sequentially.
+ * Each element is composed of fields described by the Structure object, and this class
+ * provides methods to access these fields by their index and element position.
+ * <p>
+ * Example usage:
+ * <pre>
+ * // Create a structured buffer with a predefined structure
+ * StructuredBuffer buffer = new StructuredBuffer(STRUCTURE, byteBuffer);
+ *
+ * // Access a U16 field (e.g., NAME_ID) in the second element
+ * int nameStringIndex = buffer.getU16(NAME_ID, 1);
+ * </pre>
+ * <p>
+ * The class ensures that unsigned values (U8, U16) are properly interpreted and
+ * returned as positive integers regardless of Java's signed byte and short types.
  */
 public final class StructuredBuffer {
     private final Structure structure;
