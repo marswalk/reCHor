@@ -9,7 +9,7 @@ import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
 import static ch.epfl.rechor.timetable.mapped.Structure.field;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LiamMappedTests {
+public class LiadMappedTests {
     @Test
     void testFieldWithNoFieldType(){
         assertThrows(NullPointerException.class, () -> field(1, null));
