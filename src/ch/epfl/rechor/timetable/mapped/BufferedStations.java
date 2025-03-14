@@ -33,8 +33,8 @@ public final class BufferedStations implements Stations {
         field(LAT, S32)
     );
 
-    // Conversion factor for coordinates (2^-24)
-    private static final double GEO_UNIT_TO_DEGREES = Math.scalb(1.0, -24);
+    // Conversion factor for coordinates (2^-32)
+    private static final double GEO_UNIT_TO_DEGREES = Math.scalb(360, -32);
 
     private final List<String> stringTable;
     private final StructuredBuffer buffer;
