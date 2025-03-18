@@ -3,7 +3,6 @@ package ch.epfl.rechor.timetable.mapped;
 import ch.epfl.rechor.PackedRange;
 import ch.epfl.rechor.timetable.Transfers;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.NoSuchElementException;
 import static ch.epfl.rechor.timetable.mapped.Structure.field;
 import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
@@ -12,40 +11,73 @@ import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
  * Implementation of Transfers interface that provides access to transfer data
  * represented in a flattened format.
  * <p>
- * Each transfer is represented by two fields:
+ * Each transfer is represented by three fields:
  * <ul>
  *   <li>DEP_STATION_ID (U16): Index of the departure station</li>
- *   <li>MINUTES (U8): Transfer time in minutes</li>
+ *   <li>ARR_STATION_ID (U16): Index of the arrival station</li>
+ *   <li>TRANSFER_MINUTES (U8): Transfer time in minutes</li>
  * </ul>
  * <p>
- * Additionally, a separate buffer contains the packed intervals for transfers arriving at each station.
+ * The transfers are organized so that all transfers arriving at the same station
+ * are consecutive in the buffer.
  */
 public final class BufferedTransfers implements Transfers {
     // Field indices constants
     private static final int DEP_STATION_ID = 0;
-    private static final int MINUTES = 1;
+    private static final int ARR_STATION_ID = 1;
+    private static final int TRANSFER_MINUTES = 2;
 
     // Structure definition for transfers
     private static final Structure STRUCTURE = new Structure(
         field(DEP_STATION_ID, U16),
-        field(MINUTES, U8)
+        field(ARR_STATION_ID, U16),
+        field(TRANSFER_MINUTES, U8)
     );
 
     private final StructuredBuffer buffer;
-    private final IntBuffer arrBuffer;
-    private final int stations;
+    private final int[] stationArrivingTransfers;
 
     /**
      * Constructs a BufferedTransfers instance to access flattened transfer data.
      *
      * @param buffer The byte buffer containing the transfer data
-     * @param arrBuffer The buffer containing packed ranges for transfers arriving at each station
-     * @param stations The number of stations in the timetable
      */
-    public BufferedTransfers(ByteBuffer buffer, ByteBuffer arrBuffer, int stations) {
+    public BufferedTransfers(ByteBuffer buffer) {
         this.buffer = new StructuredBuffer(STRUCTURE, buffer);
-        this.arrBuffer = arrBuffer.asIntBuffer();
-        this.stations = stations;
+
+        // Determine the number of stations
+        int numStations = 0;
+        for (int i = 0; i < this.buffer.size(); i++) {
+            int stationId = this.buffer.getU16(ARR_STATION_ID, i);
+            numStations = Math.max(numStations, stationId + 1);
+        }
+
+        // Create arriving transfers array
+        this.stationArrivingTransfers = new int[numStations];
+
+        // Calculate the packed ranges for each station
+        int currentStationId = -1;
+        int startIndex = 0;
+
+        for (int i = 0; i < this.buffer.size(); i++) {
+            int stationId = this.buffer.getU16(ARR_STATION_ID, i);
+
+            if (currentStationId != stationId) {
+                // Complete the previous station's range
+                if (currentStationId >= 0) {
+                    stationArrivingTransfers[currentStationId] = PackedRange.pack(startIndex, i);
+                }
+
+                // Start a new range for the current station
+                currentStationId = stationId;
+                startIndex = i;
+            }
+        }
+
+        // Complete the last station's range
+        if (currentStationId >= 0) {
+            stationArrivingTransfers[currentStationId] = PackedRange.pack(startIndex, this.buffer.size());
+        }
     }
 
     /**
@@ -79,7 +111,7 @@ public final class BufferedTransfers implements Transfers {
      */
     @Override
     public int minutes(int id) {
-        return buffer.getU8(MINUTES, id);
+        return buffer.getU8(TRANSFER_MINUTES, id);
     }
 
     /**
@@ -91,10 +123,10 @@ public final class BufferedTransfers implements Transfers {
      */
     @Override
     public int arrivingAt(int stationId) {
-        if (stationId < 0 || stationId >= stations) {
+        if (stationId < 0 || stationId >= stationArrivingTransfers.length) {
             throw new IndexOutOfBoundsException("Invalid station ID: " + stationId);
         }
-        return arrBuffer.get(stationId);
+        return stationArrivingTransfers[stationId];
     }
 
     /**
@@ -108,8 +140,8 @@ public final class BufferedTransfers implements Transfers {
      */
     @Override
     public int minutesBetween(int depStationId, int arrStationId) {
-        if (depStationId < 0 || depStationId >= stations ||
-            arrStationId < 0 || arrStationId >= stations) {
+        if (depStationId < 0 || depStationId >= stationArrivingTransfers.length ||
+            arrStationId < 0 || arrStationId >= stationArrivingTransfers.length) {
             throw new IndexOutOfBoundsException("Invalid station ID");
         }
 
