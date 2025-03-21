@@ -186,6 +186,15 @@ public class MappedTests {
     }
 
     @Test
+    void creatingAStructuredBufferWithEmptyStructureShouldThrowExceptionBecauseModuloZero() {
+        assertThrows(ArithmeticException.class, () -> {
+            Structure structure = new Structure();
+            ByteBuffer buffer = ByteBuffer.allocate(0);
+            new StructuredBuffer(structure, buffer);
+        });
+    }
+
+    @Test
     void structureWithSingleFieldWorks() {
         Structure structure = new Structure(field(0, S32));
         assertEquals(4, structure.totalSize());
