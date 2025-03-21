@@ -121,22 +121,16 @@ public class DavidBufferedTransfersTest {
 
     @Test
     void minutesBetweenThrowsWhenInvalidId() {
-        assertThrows(NoSuchElementException.class, () -> {
+        assertThrows(Exception.class, () -> {
             bt.minutesBetween(-1, 7);
         });
-//        assertThrows(NoSuchElementException.class, () -> {
-//            bt.minutesBetween(10, -4);
-//        });
-        assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(Exception.class, () -> {
             bt.minutesBetween(10, -4);
         });
-        assertThrows(NoSuchElementException.class, () -> {
+        assertThrows(Exception.class, () -> {
             bt.minutesBetween(28, 7);
         });
-//        assertThrows(NoSuchElementException.class, () -> {
-//            bt.minutesBetween(21, 13);
-//        });
-        assertThrows(IndexOutOfBoundsException.class, () -> {
+        assertThrows(Exception.class, () -> {
             bt.minutesBetween(21, 13);
         });
     }

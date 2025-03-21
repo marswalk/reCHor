@@ -140,14 +140,14 @@ public final class BufferedTransfers implements Transfers {
     @Override
     public int minutesBetween(int depStationId, int arrStationId) {
         // Get packed range of transfers arriving at the destination station
-        int packedRange = arrivingAtTable[arrStationId];
+        int packedRange = arrivingAt(arrStationId);
         int startIndex = PackedRange.startInclusive(packedRange);
         int endIndex = PackedRange.endExclusive(packedRange);
 
         // Search for a transfer from the specified departure station
         for (int i = startIndex; i < endIndex; i++) {
-            if (buffer.getU16(DEP_STATION_ID, i) == depStationId) {
-                return buffer.getU8(TRANSFER_MINUTES, i);
+            if (depStationId(i) == depStationId) {
+                return minutes(i);
             }
         }
 
