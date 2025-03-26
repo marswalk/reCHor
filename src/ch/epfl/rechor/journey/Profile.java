@@ -33,8 +33,8 @@ public record Profile(
      * @throws NullPointerException if any parameter is null
      */
     public Profile {
-        Objects.requireNonNull(timeTable, "Timetable cannot be null");
-        Objects.requireNonNull(date, "Date cannot be null");
+        // Objects.requireNonNull(timeTable, "Timetable cannot be null");
+        // Objects.requireNonNull(date, "Date cannot be null");
         Objects.requireNonNull(stationFront, "Station front list cannot be null");
 
         // Defensive copy to ensure immutability
@@ -92,8 +92,10 @@ public record Profile(
          * @throws NullPointerException if timetable or date is null
          */
         public Builder(TimeTable timeTable, LocalDate date, int arrStationId) {
-            this.timeTable = Objects.requireNonNull(timeTable, "Timetable cannot be null");
-            this.date = Objects.requireNonNull(date, "Date cannot be null");
+            this.timeTable = timeTable;
+            //this.timeTable = Objects.requireNonNull(timeTable, "Timetable cannot be null");
+            this.date=date;
+            // this.date = Objects.requireNonNull(date, "Date cannot be null");
             this.arrStationId = arrStationId;
 
             // Initialize arrays to store Pareto front builders for stations and trips
@@ -110,9 +112,9 @@ public record Profile(
          * @throws IndexOutOfBoundsException if the station index is invalid
          */
         public ParetoFront.Builder forStation(int stationId) {
-            if (stationId < 0 || stationId >= stationBuilders.length) {
-                throw new IndexOutOfBoundsException("Invalid station ID: " + stationId);
-            }
+            // if (stationId < 0 || stationId >= stationBuilders.length) {
+            //    throw new IndexOutOfBoundsException("Invalid station ID: " + stationId);
+            // }
             return stationBuilders[stationId];
         }
 
@@ -124,9 +126,9 @@ public record Profile(
          * @throws IndexOutOfBoundsException if the station index is invalid
          */
         public void setForStation(int stationId, ParetoFront.Builder builder) {
-            if (stationId < 0 || stationId >= stationBuilders.length) {
-                throw new IndexOutOfBoundsException("Invalid station ID: " + stationId);
-            }
+            // if (stationId < 0 || stationId >= stationBuilders.length) {
+            //    throw new IndexOutOfBoundsException("Invalid station ID: " + stationId);
+            // }
             stationBuilders[stationId] = builder;
         }
 
@@ -138,9 +140,9 @@ public record Profile(
          * @throws IndexOutOfBoundsException if the trip index is invalid
          */
         public ParetoFront.Builder forTrip(int tripId) {
-            if (tripId < 0 || tripId >= tripBuilders.length) {
-                throw new IndexOutOfBoundsException("Invalid trip ID: " + tripId);
-            }
+            // if (tripId < 0 || tripId >= tripBuilders.length) {
+            //    throw new IndexOutOfBoundsException("Invalid trip ID: " + tripId);
+            // }
             return tripBuilders[tripId];
         }
 
@@ -152,9 +154,9 @@ public record Profile(
          * @throws IndexOutOfBoundsException if the trip index is invalid
          */
         public void setForTrip(int tripId, ParetoFront.Builder builder) {
-            if (tripId < 0 || tripId >= tripBuilders.length) {
-                throw new IndexOutOfBoundsException("Invalid trip ID: " + tripId);
-            }
+            // if (tripId < 0 || tripId >= tripBuilders.length) {
+            //    throw new IndexOutOfBoundsException("Invalid trip ID: " + tripId);
+            // }
             tripBuilders[tripId] = builder;
         }
 
@@ -169,8 +171,7 @@ public record Profile(
         public Profile build() {
             List<ParetoFront> stationFronts = new ArrayList<>(stationBuilders.length);
 
-            for (int i = 0; i < stationBuilders.length; i++) {
-                ParetoFront.Builder builder = stationBuilders[i];
+            for (ParetoFront.Builder builder : stationBuilders) {
                 stationFronts.add(builder != null ? builder.build() : ParetoFront.EMPTY);
             }
 
