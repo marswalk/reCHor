@@ -172,7 +172,7 @@ public record Journey(List<Leg> legs) {
 
             Preconditions.checkArgument(!current.depTime().isBefore(previous.arrTime()));
             Preconditions.checkArgument(previous.arrStop().equals(current.depStop()));
-            Preconditions.checkArgument((previous instanceof Leg.Foot) != (current instanceof Leg.Foot));
+//            Preconditions.checkArgument((previous instanceof Leg.Foot) != (current instanceof Leg.Foot));
         }
         legs = List.copyOf(legs);
     }

@@ -46,7 +46,7 @@ public record FileTimeTable(
         
         // Map static data files into memory
         ByteBuffer stationsBuffer = map(directory.resolve("stations.bin"));
-        ByteBuffer stationAliasesBuffer = map(directory.resolve("station_aliases.bin"));
+        ByteBuffer stationAliasesBuffer = map(directory.resolve("station-aliases.bin"));
         ByteBuffer platformsBuffer = map(directory.resolve("platforms.bin"));
         ByteBuffer routesBuffer = map(directory.resolve("routes.bin"));
         ByteBuffer transfersBuffer = map(directory.resolve("transfers.bin"));

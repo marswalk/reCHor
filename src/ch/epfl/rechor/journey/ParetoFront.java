@@ -172,16 +172,16 @@ public final class ParetoFront {
          * @return this builder, to enable method chaining
          */
         public Builder add(long packedTuple) {
-            System.out.println("\n===== Adding tuple: " + formatTuple(packedTuple) + " =====");
-            System.out.println("Current Pareto front before adding: " + debugArrayToString());
+//            System.out.println("\n===== Adding tuple: " + formatTuple(packedTuple) + " =====");
+//            System.out.println("Current Pareto front before adding: " + debugArrayToString());
 
             // If the tuples is empty, simply add the tuple
             if (size == 0) {
                 ensureCapacity(1);
                 tuples[0] = packedTuple;
                 size = 1;
-                System.out.println("Empty front, added as first element");
-                System.out.println("Updated Pareto front: " + debugArrayToString());
+//                System.out.println("Empty front, added as first element");
+//                System.out.println("Updated Pareto front: " + debugArrayToString());
                 return this;
             }
 
@@ -191,34 +191,34 @@ public final class ParetoFront {
 
             // First, check if the new tuple is dominated by any existing tuple
             // We only need to check tuples that come before it in lexicographical order
-            System.out.println("Checking if new tuple is dominated by an existing tuple...");
+//            System.out.println("Checking if new tuple is dominated by an existing tuple...");
             while (insertPos < size && tuples[insertPos] <= packedTuple) {
-                System.out.print("Comparing index " + insertPos + " tuple: " + formatTuple(tuples[insertPos]) +
-                        " with new tuple: " + formatTuple(packedTuple));
+//                System.out.print("Comparing index " + insertPos + " tuple: " + formatTuple(tuples[insertPos]) +
+//                        " with new tuple: " + formatTuple(packedTuple));
                 // If an existing tuple dominates or equals the new one, no need to add it
                 if (PackedCriteria.dominatesOrIsEqual(tuples[insertPos], packedTuple)) {
                     // If the new tuple is dominated, don't add it
-                    System.out.println("... dominated. New tuple not added");
+//                    System.out.println("... dominated. New tuple not added");
                     return this;
                 }
-                System.out.println("... not dominated");
+//                System.out.println("... not dominated");
                 insertPos++;
             }
-            System.out.println("New tuple is not dominated. Will be inserted at index: " + insertPos);
+//            System.out.println("New tuple is not dominated. Will be inserted at index: " + insertPos);
 
             // Now that we are sure the new tuple will be added
             // But we will also remove any tuples that are dominated by the new one
             // These will be tuples that come after the insertion position
             int writePos = insertPos;
-            System.out.println("Checking for tuples dominated by the new tuple to be removed...");
+//            System.out.println("Checking for tuples dominated by the new tuple to be removed...");
             for (int readPos = insertPos; readPos < size; readPos++) {
-                System.out.print("Comparing index " + readPos + " tuple: " + formatTuple(tuples[readPos]) +
-                        " with new tuple: " + formatTuple(packedTuple));
+//                System.out.print("Comparing index " + readPos + " tuple: " + formatTuple(tuples[readPos]) +
+//                        " with new tuple: " + formatTuple(packedTuple));
                 if (!PackedCriteria.dominatesOrIsEqual(packedTuple, tuples[readPos])) {
-                    System.out.println("... not dominated");
+//                    System.out.println("... not dominated");
                     tuples[writePos++] = tuples[readPos];
                 } else {
-                    System.out.println("... dominated and will be removed");
+//                    System.out.println("... dominated and will be removed");
                 }
             }
             size = writePos;
@@ -229,7 +229,7 @@ public final class ParetoFront {
             tuples[insertPos] = packedTuple;
             size++;
 
-            System.out.println("Final Pareto front after adding: " + debugArrayToString());
+//            System.out.println("Final Pareto front after adding: " + debugArrayToString());
             return this;
         }
 

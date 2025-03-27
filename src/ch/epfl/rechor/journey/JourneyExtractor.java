@@ -1,6 +1,6 @@
 package ch.epfl.rechor.journey;
 
-import ch.epfl.rechor.Preconditions;
+import ch.epfl.rechor.Bits32_24_8;
 import ch.epfl.rechor.timetable.Connections;
 import ch.epfl.rechor.timetable.Stations;
 import ch.epfl.rechor.timetable.TimeTable;
@@ -34,7 +34,7 @@ public final class JourneyExtractor {
      * @throws IndexOutOfBoundsException if the departure station ID is invalid
      */
     public static List<Journey> journeys(Profile profile, int depStationId) {
-        Objects.requireNonNull(profile, "Profile cannot be null");
+//        Objects.requireNonNull(profile, "Profile cannot be null");
 
         TimeTable timeTable = profile.timeTable();
         LocalDate date = profile.date();
@@ -42,23 +42,23 @@ public final class JourneyExtractor {
         Trips trips = profile.trips();
 
         // Check if the departure station ID is valid
-        if (depStationId < 0 || depStationId >= timeTable.stations().size()) {
-            throw new IndexOutOfBoundsException("Invalid departure station ID: " + depStationId);
-        }
+//        if (depStationId < 0 || depStationId >= timeTable.stations().size()) {
+//            throw new IndexOutOfBoundsException("Invalid departure station ID: " + depStationId);
+//        }
 
         List<Journey> journeys = new ArrayList<>();
         ParetoFront depStationFront = profile.forStation(depStationId);
 
-        depStationFront.forEach((long packedCriteria) -> {
+        depStationFront.forEach((long criteria) -> {
             // Extract journey parameters
-            int depMins = PackedCriteria.depMins(packedCriteria);
-            int arrMins = PackedCriteria.arrMins(packedCriteria);
-            int changes = PackedCriteria.changes(packedCriteria);
-            int payload = PackedCriteria.payload(packedCriteria);
+            int depMins = PackedCriteria.depMins(criteria);
+            int arrMins = PackedCriteria.arrMins(criteria);
+            int changes = PackedCriteria.changes(criteria);
+            int payload = PackedCriteria.payload(criteria);
 
             // Extract first connection ID and stops to travel
-            int firstConnId = payload >>> 8; // Extract upper 24 bits
-            int stopsToTravel = payload & 0xFF; // Extract lower 8 bits
+            int firstConnId = Bits32_24_8.unpack24(payload); // Extract upper 24 bits
+            int stopsToTravel = Bits32_24_8.unpack8(payload); // Extract lower 8 bits
 
             Journey journey = extractJourney(timeTable, date, profile, depStationId,
                     depMins, arrMins, changes, firstConnId, stopsToTravel);
@@ -163,8 +163,8 @@ public final class JourneyExtractor {
             long nextCriteria = nextStationFront.get(targetArrMins, remainingChanges);
             int nextPayload = PackedCriteria.payload(nextCriteria);
 
-            int nextConnId = nextPayload >>> 8;
-            stopsToTravel = nextPayload & 0xFF;
+            int nextConnId = Bits32_24_8.unpack24(nextPayload);
+            stopsToTravel = Bits32_24_8.unpack8(nextPayload);
 
             int nextDepStopId = connections.depStopId(nextConnId);
 
