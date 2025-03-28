@@ -168,17 +168,16 @@ public final class JourneyExtractor {
 
             int nextDepStopId = connections.depStopId(nextConnId);
 
-            // Add walking leg between transport legs if needed
-            if (arrStopId != nextDepStopId) {
-                Stop walkDepStop = arrStop;
-                Stop walkArrStop = createStop(timeTable, nextDepStopId);
+            // Always add a walking leg between the last arrival stop and the next departure stop
+            Stop walkDepStop = arrStop;
+            Stop walkArrStop = createStop(timeTable, nextDepStopId);
 
-                LocalDateTime walkDepTime = arrTime;
-                LocalDateTime walkArrTime = LocalDateTime.of(date,
-                        LocalTime.of(connections.depMins(nextConnId) / 60, connections.depMins(nextConnId) % 60));
+            LocalDateTime walkDepTime = arrTime;
+            LocalDateTime walkArrTime = LocalDateTime.of(date,
+                    LocalTime.of(connections.depMins(nextConnId) / 60, connections.depMins(nextConnId) % 60));
 
-                legs.add(new Journey.Leg.Foot(walkDepStop, walkDepTime, walkArrStop, walkArrTime));
-            }
+            legs.add(new Journey.Leg.Foot(walkDepStop, walkDepTime, walkArrStop, walkArrTime));
+
 
             // Update for next iteration
             firstConnId = nextConnId;

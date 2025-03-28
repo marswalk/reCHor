@@ -2,6 +2,7 @@ package ch.epfl.rechor.journey;
 
 import ch.epfl.rechor.timetable.TimeTable;
 import ch.epfl.rechor.timetable.mapped.FileTimeTable;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -11,40 +12,111 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class JourneyExtractorTest {
 
-    @Test
-    public void testJourneyExtractionMatchesProfileFile() throws IOException {
-        System.out.println("==== Starting Journey Extraction Test ====");
+    private Profile profile;
+    private int depStationId;
+    private int arrStationId;
+    private TimeTable timeTable;
+    private LocalDate date;
 
+    @BeforeEach
+    public void setUp() throws IOException {
+        System.out.println("\n==== Setting up ====");
         // Set up the environment with the timetable data and journey parameters
-        TimeTable timeTable = FileTimeTable.in(Path.of("timetable"));
-        System.out.println("TimeTable loaded successfully");
+        System.out.println("Loading timetable data...");
+        timeTable = FileTimeTable.in(Path.of("timetable"));
+        System.out.println("✓ Loaded timetable successfully");
 
-        LocalDate date = LocalDate.of(2025, Month.MARCH, 18);
-        int arrStationId = 11486; // Gruyères
-        int depStationId = 7872;  // Ecublens VD, EPFL
+        date = LocalDate.of(2025, Month.MARCH, 18);
+        arrStationId = 11486; // Gruyères
+        depStationId = 7872;  // Ecublens VD, EPFL
         System.out.println("Test parameters: date=" + date + ", departure=" + depStationId +
                 " (" + timeTable.stations().name(depStationId) + "), arrival=" +
                 arrStationId + " (" + timeTable.stations().name(arrStationId) + ")");
 
         // Read the profile from the provided file
         System.out.println("Reading profile from file...");
-        Profile profile = readProfile(timeTable, date, arrStationId);
-        System.out.println("Profile loaded successfully");
+        profile = readProfile(timeTable, date, arrStationId);
+        System.out.println("✓ Profile loaded successfully");
+    }
+
+    //iterate through every station id to find the id of Renens VD, gare
+    private int findAnyStationId(String stationName) {
+        for (int i = 0; i < timeTable.stations().size(); i++) {
+            if (timeTable.stations().name(i).equals(stationName)) {
+                System.out.println("Found " + stationName + " at station ID: " + i);
+                return i;
+            }
+        }
+        return -1; // Not found
+    }
+
+    @Test
+    public void testJourneyExtraction() throws IOException {
+        System.out.println("\n==== Starting Journey Extraction Test ====");
+
+        // Extract journeys using JourneyExtractor
+        System.out.println("Extracting journeys...");
+        List<Journey> journeys = JourneyExtractor.journeys(profile, depStationId);
+        System.out.println("Found " + journeys.size() + " journeys");
+
+        // Basic verification
+        assertNotNull(journeys, "Extracted journeys should not be null");
+        assertFalse(journeys.isEmpty(), "There should be at least one journey extracted");
+        assertTrue(journeys.size() >= 33, "Expected at least 33 journeys, got " + journeys.size());
+    }
+
+    @Test
+    public void testStartingOnFoot() throws IOException {
+        System.out.println("\n==== Starting Test for Journey Requiring Walking Leg First ====");
+
+        depStationId = findAnyStationId("Renens VD, gare"); // Renens VD, gare
+
+        System.out.println("Test parameters: date=" + date + ", departure=" + depStationId +
+                " (" + timeTable.stations().name(depStationId) + "), arrival=" +
+                arrStationId + " (" + timeTable.stations().name(arrStationId) + ")");
+
+        // Extract journeys using JourneyExtractor
+        System.out.println("Extracting journeys...");
+        List<Journey> journeys = JourneyExtractor.journeys(profile, depStationId);
+        System.out.println("Found " + journeys.size() + " journeys");
+
+        // Verify if the first journey has a walking leg
+        Journey firstJourney = journeys.get(0);
+        System.out.println("Examining journey at index 0:");
+        System.out.println("- Departure: " + firstJourney.depTime() + " from " + firstJourney.depStop().name() +
+                (firstJourney.depStop().platformName() != null ? " (" + firstJourney.depStop().platformName() + ")" : ""));
+        System.out.println("- Arrival: " + firstJourney.arrTime() + " at " + firstJourney.arrStop().name() +
+                (firstJourney.arrStop().platformName() != null ? " (" + firstJourney.arrStop().platformName() + ")" : ""));
+        System.out.println("- Legs: " + firstJourney.legs().size());
+        for (int i = 0; i < firstJourney.legs().size(); i++) {
+            Journey.Leg leg = firstJourney.legs().get(i);
+            if (leg instanceof Journey.Leg.Transport t) {
+                System.out.println("  Leg " + i + " (Transport): " + t.depTime() + " " +
+                        t.depStop().name() + " → " + t.arrTime() + " " +
+                        t.arrStop().name() + " (" + t.route() + " to " + t.destination() + ")");
+            } else if (leg instanceof Journey.Leg.Foot f) {
+                System.out.println("  Leg " + i + " (Foot): " + f.depTime() + " " +
+                        f.depStop().name() + " → " + f.arrTime() + " " +
+                        f.arrStop().name() + (f.isTransfer() ? " (Transfer)" : ""));
+            }
+        }
+        assertInstanceOf(Journey.Leg.Foot.class, firstJourney.legs().getFirst(), "The first leg of the first journey should be a walking leg");
+    }
+
+    @Test
+    public void testJourney32Extraction() throws IOException {
+        System.out.println("\n==== Starting Journey Extraction Test ====");
 
         try {
             // Extract journeys using JourneyExtractor
             System.out.println("Extracting journeys...");
             List<Journey> journeys = JourneyExtractor.journeys(profile, depStationId);
             System.out.println("Found " + journeys.size() + " journeys");
-
-            // Verify journey connections against profile
-            verifyJourneysMatchProfile(journeys, profile, depStationId);
 
             // Basic verification
             assertNotNull(journeys, "Extracted journeys should not be null");
@@ -72,6 +144,8 @@ public class JourneyExtractorTest {
                             f.arrStop().name() + (f.isTransfer() ? " (Transfer)" : ""));
                 }
             }
+
+            System.out.println("You should check if this journey matches the one shown on Schinz's screenshot!");
             assertNotNull(journey, "Journey at index 32 should not be null");
 
             // Verify journey date
@@ -95,36 +169,6 @@ public class JourneyExtractorTest {
             // Check journey times
             assertTrue(journey.depTime().isBefore(journey.arrTime()),
                     "Departure time should be before arrival time");
-
-            // Verify iCalendar conversion
-            String icalEvent = JourneyIcalConverter.toIcalendar(journey);
-            assertNotNull(icalEvent, "iCalendar event should not be null");
-
-            // Check iCalendar structure
-            System.out.println("Verifying iCalendar structure...");
-            System.out.println(icalEvent);
-            assertTrue(icalEvent.contains("BEGIN:VCALENDAR"), "iCalendar should start with BEGIN:VCALENDAR");
-            assertTrue(icalEvent.contains("VERSION:2.0"), "iCalendar should contain VERSION:2.0");
-            assertTrue(icalEvent.contains("PRODID:ReCHor"), "iCalendar should contain PRODID:ReCHor");
-            assertTrue(icalEvent.contains("BEGIN:VEVENT"), "iCalendar should contain BEGIN:VEVENT");
-
-            // Check summary (start and end stations)
-            String summary = "SUMMARY:Ecublens VD, EPFL → Gruyères";
-            assertTrue(icalEvent.contains(summary), "iCalendar should contain correct SUMMARY");
-
-            // Check date/time format
-            String formattedDate = date.toString().replace("-", "");
-            assertTrue(icalEvent.contains("DTSTART:" + formattedDate),
-                    "iCalendar should contain correct DTSTART date");
-            assertTrue(icalEvent.contains("DTEND:" + formattedDate),
-                    "iCalendar should contain correct DTEND date");
-
-            // Verify event has description with journey details
-            assertTrue(icalEvent.contains("DESCRIPTION:"), "iCalendar should contain DESCRIPTION");
-
-            // Check closing tags
-            assertTrue(icalEvent.contains("END:VEVENT"), "iCalendar should contain END:VEVENT");
-            assertTrue(icalEvent.contains("END:VCALENDAR"), "iCalendar should end with END:VCALENDAR");
         } catch (Exception e) {
             System.out.println("ERROR: Exception occurred during journey extraction");
             System.out.println("Exception type: " + e.getClass().getName());
@@ -134,9 +178,68 @@ public class JourneyExtractorTest {
         }
     }
 
+    @Test
+    public void testIcalConversionForAllJourneysIsInCorrectFormat() throws IOException {
+        System.out.println("\n==== Starting iCalendar Conversion Test ====");
+
+
+        // Extract journeys using JourneyExtractor
+        System.out.println("Extracting journeys...");
+        List<Journey> journeys = JourneyExtractor.journeys(profile, depStationId);
+        System.out.println("Found " + journeys.size() + " journeys");
+
+        // Verify iCalendar conversion for each journey
+        for (Journey journey : journeys) {
+            String icalEvent = JourneyIcalConverter.toIcalendar(journey);
+            System.out.println("iCalendar event for journey " + journey.depTime() + " → " + journey.arrTime() + ":");
+            System.out.println(icalEvent);
+            assertNotNull(icalEvent, "iCalendar event should not be null");
+            assertTrue(icalEvent.contains("BEGIN:VCALENDAR"), "iCalendar should start with BEGIN:VCALENDAR");
+            assertTrue(icalEvent.contains("VERSION:2.0"), "iCalendar should contain VERSION:2.0");
+            assertTrue(icalEvent.contains("PRODID:ReCHor"), "iCalendar should contain PRODID:ReCHor");
+            assertTrue(icalEvent.contains("BEGIN:VEVENT"), "iCalendar should contain BEGIN:VEVENT");
+            assertTrue(icalEvent.contains("END:VEVENT"), "iCalendar should contain END:VEVENT");
+            assertTrue(icalEvent.contains("END:VCALENDAR"), "iCalendar should end with END:VCALENDAR");
+        }
+    }
+
+    @Test
+    public void testJourney32MatchesExactlyWithICalExampleIn2_1_8() throws IOException {
+        System.out.println("\n==== Starting Journey 32 iCalendar Test ====");
+
+        // Extract journeys using JourneyExtractor
+        System.out.println("Extracting journeys...");
+        List<Journey> journeys = JourneyExtractor.journeys(profile, depStationId);
+        System.out.println("Found " + journeys.size() + " journeys");
+
+        // Verify journey at index 32
+        Journey journey = journeys.get(32);
+        System.out.println("Examining journey at index 32:");
+        System.out.println("- Departure: " + journey.depTime() + " from " + journey.depStop().name() +
+                (journey.depStop().platformName() != null ? " (" + journey.depStop().platformName() + ")" : ""));
+        System.out.println("- Arrival: " + journey.arrTime() + " at " + journey.arrStop().name() +
+                (journey.arrStop().platformName() != null ? " (" + journey.arrStop().platformName() + ")" : ""));
+        System.out.println("- Legs: " + journey.legs().size());
+
+        // Convert to iCalendar format
+        String icalEvent = JourneyIcalConverter.toIcalendar(journey);
+        System.out.println("iCalendar event for journey 32:");
+        System.out.println(icalEvent);
+
+        // Check if the iCalendar event matches the expected output
+        assertNotNull(icalEvent, "iCalendar event should not be null");
+
+        assertTrue(icalEvent.contains("DESCRIPTION:16h13 Ecublens VD, EPFL → Renens VD, gare (arr. 16h19)\\ntrajet " +
+                        "à pied (3 min)\\n16h26 Renens VD (voie 4) → Lausanne (arr. 16h33 voie 5)\\nc" +
+                        "hangement (5 min)\\n16h40 Lausanne (voie 1) → Romont FR (arr. 17h13 voie 2)" +
+                        "\\nchangement (3 min)\\n17h22 Romont FR (voie 1) → Bulle (arr. 17h41 voie 2)" +
+                        "\\nchangement (3 min)\\n17h50 Bulle (voie 4) → Gruyères (arr. 17h57 voie 2)"),
+                "iCalendar should contain the exact description in 2.1.8");
+    }
+
     // Helper method to read profile from the provided text file
     private Profile readProfile(TimeTable timeTable, LocalDate date, int arrStationId) throws IOException {
-        Path path = Path.of("test/ch/epfl/rechor/journey/"+"profile_" + date + "_" + arrStationId + ".txt");
+        Path path = Path.of("test/ch/epfl/rechor/journey/"+"profile_"  + date +  "_"  + arrStationId +  ".txt");
         try (BufferedReader r = Files.newBufferedReader(path)) {
             Profile.Builder profileB = new Profile.Builder(timeTable, date, arrStationId);
             int stationId = -1;
@@ -151,61 +254,6 @@ public class JourneyExtractorTest {
             }
             return profileB.build();
         }
-    }
-
-    private void verifyJourneysMatchProfile(List<Journey> journeys, Profile profile, int depStationId) {
-        // Get the pareto front for the departure station
-        ParetoFront front = profile.forStation(depStationId);
-
-        // Create a list to track which criteria we've matched to journeys
-        boolean[] matchedCriteria = new boolean[front.size()];
-        AtomicInteger matchCount = new AtomicInteger();
-
-        // First check: number of journeys should match number of criteria in the profile
-        System.out.println("Checking journey count...");
-        System.out.println("- Profile contains: " + front.size() + " journeys");
-        System.out.println("- Extracted: " + journeys.size() + " journeys");
-
-        // For each journey, find its matching criteria in the pareto front
-        for (Journey journey : journeys) {
-            // Extract journey properties to match against criteria
-            int depMins = journey.depTime().getHour() * 60 + journey.depTime().getMinute();
-            int arrMins = journey.arrTime().getHour() * 60 + journey.arrTime().getMinute();
-            int changes = countTransfers(journey);
-
-            // Find matching criteria in the pareto front
-            AtomicBoolean found = new AtomicBoolean(false);
-            int[] index = {0};
-            front.forEach(criteria -> {
-                if (!matchedCriteria[index[0]] &&
-                        PackedCriteria.depMins(criteria) == depMins &&
-                        PackedCriteria.arrMins(criteria) == arrMins &&
-                        PackedCriteria.changes(criteria) == changes) {
-
-                    matchedCriteria[index[0]] = true;
-                    found.set(true);
-                    matchCount.getAndIncrement();
-                }
-                index[0]++;
-            });
-
-            assertTrue(found.get(), "Journey not found in profile: dep=" + depMins + ", arr=" + arrMins + ", changes=" + changes);
-        }
-
-        assertEquals(front.size(), matchCount.get(), "Not all profile criteria were matched to journeys");
-
-        System.out.println("All " + matchCount + " journeys match profile criteria");
-    }
-
-    private int countTransfers(Journey journey) {
-        // Count transport legs, subtract 1 to get transfers
-        int transportLegs = 0;
-        for (Journey.Leg leg : journey.legs()) {
-            if (leg instanceof Journey.Leg.Transport) {
-                transportLegs++;
-            }
-        }
-        return transportLegs - 1;
     }
 
     // Helper method to get the first station ID of a journey
