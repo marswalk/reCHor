@@ -93,7 +93,7 @@ public final class FormatterFr {
         sb.append(formatTime(leg.depTime()));
         sb.append(" ");
         sb.append(leg.depStop().name());
-        if (leg.depStop().platformName() != null) {
+        if (leg.depStop().platformName() != null && !leg.depStop().platformName().isBlank()) {
             sb.append(" (");
             sb.append(formatPlatformName(leg.depStop()));
             sb.append(")");
@@ -102,7 +102,7 @@ public final class FormatterFr {
         sb.append(leg.arrStop().name());
         sb.append(" (arr. ");
         sb.append(formatTime(leg.arrTime()));
-        if (leg.arrStop().platformName() != null) {
+        if (leg.arrStop().platformName() != null && !leg.arrStop().platformName().isBlank()) {
             sb.append(" ");
             sb.append(formatPlatformName(leg.arrStop()));
         }
