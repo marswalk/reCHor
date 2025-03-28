@@ -229,12 +229,15 @@ public class JourneyExtractorTest {
         // Check if the iCalendar event matches the expected output
         assertNotNull(icalEvent, "iCalendar event should not be null");
 
-        assertTrue(icalEvent.contains("DESCRIPTION:16h13 Ecublens VD, EPFL → Renens VD, gare (arr. 16h19)\\ntrajet " +
-                        "à pied (3 min)\\n16h26 Renens VD (voie 4) → Lausanne (arr. 16h33 voie 5)\\nc" +
-                        "hangement (5 min)\\n16h40 Lausanne (voie 1) → Romont FR (arr. 17h13 voie 2)" +
-                        "\\nchangement (3 min)\\n17h22 Romont FR (voie 1) → Bulle (arr. 17h41 voie 2)" +
-                        "\\nchangement (3 min)\\n17h50 Bulle (voie 4) → Gruyères (arr. 17h57 voie 2)"),
-                "iCalendar should contain the exact description in 2.1.8");
+        // Check DESCRIPTION matches exactly
+        String[] lines = icalEvent.split("\r?\n");
+        int lineNumber = 9;
+        assertEquals("DESCRIPTION:16h13 Ecublens VD, EPFL → Renens VD, gare (arr. 16h19)\\ntrajet ", lines[lineNumber++]);
+        assertEquals(" à pied (3 min)\\n16h26 Renens VD (voie 4) → Lausanne (arr. 16h33 voie 5)\\nc", lines[lineNumber++]);
+        assertEquals(" hangement (5 min)\\n16h40 Lausanne (voie 1) → Romont FR (arr. 17h13 voie 2)", lines[lineNumber++]);
+        assertEquals(" \\nchangement (3 min)\\n17h22 Romont FR (voie 1) → Bulle (arr. 17h41 voie 2)", lines[lineNumber++]);
+        assertEquals(" \\nchangement (3 min)\\n17h50 Bulle (voie 4) → Gruyères (arr. 17h57 voie 2)", lines[lineNumber++]);
+
     }
 
     // Helper method to read profile from the provided text file

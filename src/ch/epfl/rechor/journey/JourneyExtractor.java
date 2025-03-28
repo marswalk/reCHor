@@ -102,10 +102,9 @@ public final class JourneyExtractor {
             Stop connDepStop = createStop(timeTable, connDepStopId);
 
             LocalDateTime depTime = LocalDateTime.of(date, LocalTime.of(depMins / 60, depMins % 60));
-            LocalDateTime connDepTime = LocalDateTime.of(date, LocalTime.of(connections.depMins(firstConnId) / 60,
-                    connections.depMins(firstConnId) % 60));
+            LocalDateTime WalkToConnDepTime = depTime.plusMinutes(timeTable.transfers().minutesBetween(depStationId, timeTable.stationId(connDepStopId)));
 
-            legs.add(new Journey.Leg.Foot(depStop, depTime, connDepStop, connDepTime));
+            legs.add(new Journey.Leg.Foot(depStop, depTime, connDepStop, WalkToConnDepTime));
         }
 
         // Continue extracting journey segments until we reach the destination
@@ -146,8 +145,7 @@ public final class JourneyExtractor {
                     Stop finalDepStop = arrStop;
                     Stop finalArrStop = createStop(timeTable, profile.arrStationId());
 
-                    LocalDateTime finalArrTime = LocalDateTime.of(date,
-                            LocalTime.of(targetArrMins / 60, targetArrMins % 60));
+                    LocalDateTime finalArrTime = arrTime.plusMinutes(timeTable.transfers().minutesBetween(arrStationId, profile.arrStationId()));
 
                     legs.add(new Journey.Leg.Foot(finalDepStop, arrTime, finalArrStop, finalArrTime));
                 }
@@ -173,8 +171,7 @@ public final class JourneyExtractor {
             Stop walkArrStop = createStop(timeTable, nextDepStopId);
 
             LocalDateTime walkDepTime = arrTime;
-            LocalDateTime walkArrTime = LocalDateTime.of(date,
-                    LocalTime.of(connections.depMins(nextConnId) / 60, connections.depMins(nextConnId) % 60));
+            LocalDateTime walkArrTime = walkDepTime.plusMinutes(timeTable.transfers().minutesBetween(timeTable.stationId(arrStopId), timeTable.stationId(nextDepStopId)));
 
             legs.add(new Journey.Leg.Foot(walkDepStop, walkDepTime, walkArrStop, walkArrTime));
 
