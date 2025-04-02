@@ -2,11 +2,13 @@ package ch.epfl.rechor;
 
 /**
  * Utility class for packing and unpacking 24-bit and 8-bit values into a single 32-bit integer.
- * The 24 most significant bits are used for the 24-bit value, and the 8 least significant bits are used for the 8-bit value.
- * The 24-bit value is extracted by shifting the 32-bit integer to the right by 8 bits.
- * The 8-bit value is extracted by masking the 32-bit integer with 0xFF.
- * The 24-bit value is packed by shifting it to the left by 8 bits and combining it with the 8-bit value.
- * The 24-bit value must fit in 24 bits, and the 8-bit value must fit in 8 bits.
+ * <ul>
+ * <li>The 24 most significant bits are used for the 24-bit value, and the 8 least significant bits are used for the 8-bit value.</li>
+ * <li>The 24-bit value is extracted by shifting the 32-bit integer to the right by 8 bits.</li>
+ * <li>The 8-bit value is extracted by masking the 32-bit integer with 0xFF.</li>
+ * <li>The 24-bit value is packed by shifting it to the left by 8 bits and combining it with the 8-bit value.</li>
+ * <li>The 24-bit value must fit in 24 bits, and the 8-bit value must fit in 8 bits.</li>
+ * </ul>
  * The class is non-instantiable.
  *
  *  @author Guanting Wen (392412)
@@ -14,7 +16,6 @@ package ch.epfl.rechor;
  */
 public class Bits32_24_8 {
 
-    // once again non instantiable
     private Bits32_24_8() {}
 
     /**

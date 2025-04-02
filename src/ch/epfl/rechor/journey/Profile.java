@@ -33,9 +33,7 @@ public record Profile(
      * @throws NullPointerException if any parameter is null
      */
     public Profile {
-        // Objects.requireNonNull(timeTable, "Timetable cannot be null");
-        // Objects.requireNonNull(date, "Date cannot be null");
-        Objects.requireNonNull(stationFront, "Station front list cannot be null");
+        Objects.requireNonNull(stationFront);
 
         // Defensive copy to ensure immutability
         stationFront = List.copyOf(stationFront);
@@ -93,9 +91,7 @@ public record Profile(
          */
         public Builder(TimeTable timeTable, LocalDate date, int arrStationId) {
             this.timeTable = timeTable;
-            //this.timeTable = Objects.requireNonNull(timeTable, "Timetable cannot be null");
             this.date=date;
-            // this.date = Objects.requireNonNull(date, "Date cannot be null");
             this.arrStationId = arrStationId;
 
             // Initialize arrays to store Pareto front builders for stations and trips
@@ -112,9 +108,6 @@ public record Profile(
          * @throws IndexOutOfBoundsException if the station index is invalid
          */
         public ParetoFront.Builder forStation(int stationId) {
-            // if (stationId < 0 || stationId >= stationBuilders.length) {
-            //    throw new IndexOutOfBoundsException("Invalid station ID: " + stationId);
-            // }
             return stationBuilders[stationId];
         }
 
@@ -140,9 +133,6 @@ public record Profile(
          * @throws IndexOutOfBoundsException if the trip index is invalid
          */
         public ParetoFront.Builder forTrip(int tripId) {
-            // if (tripId < 0 || tripId >= tripBuilders.length) {
-            //    throw new IndexOutOfBoundsException("Invalid trip ID: " + tripId);
-            // }
             return tripBuilders[tripId];
         }
 
@@ -154,9 +144,6 @@ public record Profile(
          * @throws IndexOutOfBoundsException if the trip index is invalid
          */
         public void setForTrip(int tripId, ParetoFront.Builder builder) {
-            // if (tripId < 0 || tripId >= tripBuilders.length) {
-            //    throw new IndexOutOfBoundsException("Invalid trip ID: " + tripId);
-            // }
             tripBuilders[tripId] = builder;
         }
 

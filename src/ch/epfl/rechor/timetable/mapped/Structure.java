@@ -80,7 +80,7 @@ public final class Structure {
     public static Field field(int index, FieldType type) {
         return new Field(index, type);
     }
-    // the whole point of Field field is so that you can omit new Field() when creating a new Field instance ?
+    // the whole point of method field is so that you can omit new Field() when creating a new Field instance ?
 
     /**
      * Constructs a structure with the given fields.

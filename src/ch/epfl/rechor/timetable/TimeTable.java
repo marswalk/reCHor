@@ -46,6 +46,19 @@ public interface TimeTable {
 
     // Default methods
     /**
+     * Checks if the given stop ID represents a station (and not platform)
+     *
+     * <p>
+     * Note:
+     * If such an index is less than the number of stations existing in the timetable,
+     * then it represents a station index. Otherwise, it represents a track or platform index,
+     * which can be calculated by subtracting the number of stations existing in the timetable
+     * from the stop index.
+     *
+     * For example, if there are 1000 stations and 2000 tracks or platforms, stop index 500
+     * represents station index 500, while stop index 1700 represents track/platform index 700.
+     * </p>
+     *
      * @param stopId stop ID to check
      * @return true if ID represents a station
      */
@@ -53,33 +66,43 @@ public interface TimeTable {
         return stopId < stations().size();
     }
 
-    // If such an index is less than the number of stations existing in the timetable,
-    // then it represents a station index. Otherwise, it represents a track or platform index,
-    // which can be calculated by subtracting the number of stations existing in the timetable
-    // from the stop index.
-    //
-    // For example, if there are 1000 stations and 2000 tracks or platforms, stop index 500
-    // represents station index 500, while stop index 1700 represents track/platform index 700.
-
     /**
+     * Checks if given stop ID represents a platform (and not station)
+     *
+     * <p>
+     * Note:
+     * If such an index is less than the number of stations existing in the timetable,
+     * then it represents a station index. Otherwise, it represents a track or platform index,
+     * which can be calculated by subtracting the number of stations existing in the timetable
+     * from the stop index.
+     *
+     * For example, if there are 1000 stations and 2000 tracks or platforms, stop index 500
+     * represents station index 500, while stop index 1700 represents track/platform index 700.
+     * </p>
+     *
      * @param stopId stop ID to check
      * @return true if ID represents a platform
      */
     default boolean isPlatformId(int stopId) {
         return !isStationId(stopId);
     }
-    // as either a platform/track or a station...
 
     /**
+     * Gets the station ID for the given stop ID
+     *
+     * <p>
+     * Note:
+     * stationId is the same as stopId if it is a station, otherwise (if it is a platform/track), it therefore
+     * represents a track/platform index which can be calculated by subtracting the number of stations existing
+     * in the timetable from the stop index (stopId).
+     * </p>
+     *
      * @param stopId stop ID to convert
      * @return station ID for this stop (same if station)
      */
     default int stationId(int stopId) {
         return isStationId(stopId) ? stopId : platforms().stationId(stopId - stations().size());
     }
-    // stationId is the same as stopId if it is a station, otherwise (if it is a platform/track), it therefore
-    // represents a track/platform index which can be calculated by subtracting the number of stations existing
-    // in the timetable from the stop index (stopId).
 
     /**
      * @param stopId stop ID to check
@@ -89,5 +112,4 @@ public interface TimeTable {
         return isStationId(stopId) ? null :
                 platforms().name(stopId - stations().size());
     }
-    // returns null if it is a station and otherwise the track/platform name from the indexed platforms data.
 }

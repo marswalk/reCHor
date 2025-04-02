@@ -34,17 +34,11 @@ public final class JourneyExtractor {
      * @throws IndexOutOfBoundsException if the departure station ID is invalid
      */
     public static List<Journey> journeys(Profile profile, int depStationId) {
-//        Objects.requireNonNull(profile, "Profile cannot be null");
 
         TimeTable timeTable = profile.timeTable();
         LocalDate date = profile.date();
         Connections connections = profile.connections();
         Trips trips = profile.trips();
-
-        // Check if the departure station ID is valid
-//        if (depStationId < 0 || depStationId >= timeTable.stations().size()) {
-//            throw new IndexOutOfBoundsException("Invalid departure station ID: " + depStationId);
-//        }
 
         List<Journey> journeys = new ArrayList<>();
         ParetoFront depStationFront = profile.forStation(depStationId);
@@ -58,7 +52,8 @@ public final class JourneyExtractor {
 
             // Extract first connection ID and stops to travel
             int firstConnId = Bits32_24_8.unpack24(payload); // Extract upper 24 bits
-            int stopsToTravel = Bits32_24_8.unpack8(payload); // Extract lower 8 bits
+            int stopsToTravel = Bits32_24_8.unpack8(payload); // Extract lower 8 bits\
+            // stopsToTravel represents the number of intermediate stops for each connection in the journey (right here, it is for the very first connection)
 
             Journey journey = extractJourney(timeTable, date, profile, depStationId,
                     depMins, arrMins, changes, firstConnId, stopsToTravel);
@@ -114,8 +109,8 @@ public final class JourneyExtractor {
             int tripId = connTripId;
 
             // Find destination station after traveling 'stopsToTravel' stops
-            int finalStopIndex = findFinalStopIndex(connections, connId, stopsToTravel);
-            int arrStopId = connections.arrStopId(finalStopIndex);
+            int finalConnectionIndex = findFinalConnectionIndex(connections, connId, stopsToTravel);
+            int arrStopId = connections.arrStopId(finalConnectionIndex);
             int arrStationId = timeTable.stationId(arrStopId);
 
             // Create transport leg
@@ -128,7 +123,7 @@ public final class JourneyExtractor {
             LocalDateTime depTime = LocalDateTime.of(date,
                     LocalTime.of(connections.depMins(connId) / 60, connections.depMins(connId) % 60));
             LocalDateTime arrTime = LocalDateTime.of(date,
-                    LocalTime.of(connections.arrMins(finalStopIndex) / 60, connections.arrMins(finalStopIndex) % 60));
+                    LocalTime.of(connections.arrMins(finalConnectionIndex) / 60, connections.arrMins(finalConnectionIndex) % 60));
 
             String route = timeTable.routes().name(trips.routeId(tripId));
             String destination = trips.destination(tripId);
@@ -200,9 +195,9 @@ public final class JourneyExtractor {
     }
 
     /**
-     * Finds the index of the final stop after traveling a specified number of stops.
+     * Finds the index of the final connection (i.e. after traveling a specified number of stops.
      */
-    private static int findFinalStopIndex(Connections connections, int startConnId, int stopsToTravel) {
+    private static int findFinalConnectionIndex(Connections connections, int startConnId, int stopsToTravel) {
         int currentConnId = startConnId;
         for (int i = 0; i < stopsToTravel; i++) {
             currentConnId = connections.nextConnectionId(currentConnId);
@@ -225,7 +220,6 @@ public final class JourneyExtractor {
 
             // Create intermediate stop data
             int arrStopId = connections.arrStopId(currentConnId);
-            int depStopId = connections.depStopId(nextConnId);
 
             Stop stop = createStop(timeTable, arrStopId);
 

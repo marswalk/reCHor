@@ -41,26 +41,6 @@ public final class IcalBuilder {
         DESCRIPTION; // A detailed description of the event (as per format given using FormatterFr)
     }
 
-//    /**
-//     * Our own line folding subroutine
-//     */
-//    private void appendLine(String line) {
-//        if (line.length() <= 75) {
-//            sb.append(line).append("\n");
-//        } else {
-//            // first line is 75 chars
-//            String firstPart = line.substring(0, 75);
-//            sb.append(firstPart).append("\n");
-//            int index = 75;
-//            // 75 characters = space + 74 chars
-//            while (index < line.length()) {
-//                int end = Math.min(index + 74, line.length());
-//                sb.append(" ").append(line, index, end).append("\n");
-//                index = end;
-//            }
-//        }
-//    }
-
     private void appendLine(String line) {
         int lineLength = line.length();
         int index = 0;
@@ -93,7 +73,7 @@ public final class IcalBuilder {
 
 
     /**
-     * adds to the event being built a line
+     * Adds to the event being built a line
      * whose name and value are those given, taking care to "fold" the line as needed to respect
      * the constraint that no line of iCalendar data should exceed 75 characters.
      * @param name name of the "attribute" of the event in iCal format (SUMMARY, DESCRIPTION, etc.)
@@ -107,7 +87,7 @@ public final class IcalBuilder {
     }
 
     /**
-     * adds to the event being built
+     * Adds to the event being built
      * a line whose name is the one given and the value is the textual representation of the
      * date/time given, in the format specified in §2.1.6
      * @param name name of the "attribute" of the event in iCal format (DTSTART, DTEND, etc.)
@@ -124,7 +104,7 @@ public final class IcalBuilder {
     }
 
     /**
-     * starts a component by adding a line whose
+     * Starts a component by adding a line whose
      * name is BEGIN and the value is the name of the component given.
      * @param component
      * @return begins a component
@@ -136,7 +116,7 @@ public final class IcalBuilder {
     }
 
     /**
-     * ends the last component that was previously started by begin but
+     * Ends the last component that was previously started by begin but
      * not yet ended by a previous call to end, or throws an IllegalArgumentException if there are
      * none (see programming tips).
      * @return ends the last opened component
@@ -149,7 +129,7 @@ public final class IcalBuilder {
     }
 
     /**
-     * returns the character string in iCalendar format representing the
+     * Returns the character string in iCalendar format representing the
      * event being built, or throws an IllegalArgumentException if a component that was started by
      * a call to begin has not, at this stage, been ended by a call to end.
      * @return String in iCalendar format

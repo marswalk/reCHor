@@ -67,8 +67,6 @@ public final class ParetoFront {
         }
     }
 
-
-    // redefinition of toString to facilitate debugging
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("ParetoFront[");

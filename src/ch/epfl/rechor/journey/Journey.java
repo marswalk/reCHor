@@ -72,14 +72,14 @@ public record Journey(List<Leg> legs) {
             /**
              * Constructs an IntermediateStop.
              *
-             * @param stop the stop
-             * @param arrTime the arrival time
-             * @param depTime the departure time
+             * @param stop the intermediate stop
+             * @param arrTime the arrival time at the stop
+             * @param depTime the departure time at the stop
              * @throws NullPointerException if stop, arrTime, or depTime is null
              * @throws IllegalArgumentException if depTime is before arrTime
              */
             public IntermediateStop {
-                Objects.requireNonNull(stop, "Stop must not be null");
+                Objects.requireNonNull(stop);
                 Preconditions.checkArgument(!(depTime.isBefore(arrTime)));
             }
         }
@@ -103,13 +103,13 @@ public record Journey(List<Leg> legs) {
              * @throws IllegalArgumentException if arrTime is before depTime
              */
             public Transport {
-                Objects.requireNonNull(depStop, "Departure stop must not be null");
-                Objects.requireNonNull(depTime, "Departure time must not be null");
-                Objects.requireNonNull(arrStop, "Arrival stop must not be null");
-                Objects.requireNonNull(arrTime, "Arrival time must not be null");
-                Objects.requireNonNull(vehicle, "Vehicle must not be null");
-                Objects.requireNonNull(route, "Route must not be null");
-                Objects.requireNonNull(destination, "Destination must not be null");
+                Objects.requireNonNull(depStop);
+                Objects.requireNonNull(depTime);
+                Objects.requireNonNull(arrStop);
+                Objects.requireNonNull(arrTime);
+                Objects.requireNonNull(vehicle);
+                Objects.requireNonNull(route);
+                Objects.requireNonNull(destination);
                 Preconditions.checkArgument(!(arrTime.isBefore(depTime)));
                 intermediateStops = List.copyOf(intermediateStops);
             }
@@ -130,10 +130,10 @@ public record Journey(List<Leg> legs) {
              * @throws IllegalArgumentException if arrTime is before depTime
              */
             public Foot {
-                Objects.requireNonNull(depStop, "Departure stop must not be null");
-                Objects.requireNonNull(depTime, "Departure time must not be null");
-                Objects.requireNonNull(arrStop, "Arrival stop must not be null");
-                Objects.requireNonNull(arrTime, "Arrival time must not be null");
+                Objects.requireNonNull(depStop);
+                Objects.requireNonNull(depTime);
+                Objects.requireNonNull(arrStop);
+                Objects.requireNonNull(arrTime);
                 Preconditions.checkArgument(!(arrTime.isBefore(depTime)));
             }
 
@@ -174,6 +174,7 @@ public record Journey(List<Leg> legs) {
             Preconditions.checkArgument(previous.arrStop().equals(current.depStop()));
             Preconditions.checkArgument((previous instanceof Leg.Foot) != (current instanceof Leg.Foot));
         }
+        // To ensure the immutability of the class, we use the method List.copyOf() to create a copy of the list
         legs = List.copyOf(legs);
     }
 

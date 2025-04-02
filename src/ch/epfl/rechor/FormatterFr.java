@@ -16,7 +16,6 @@ import java.time.format.DateTimeFormatter;
  */
 public final class FormatterFr {
 
-    // private prevent instantiation
     private FormatterFr() {}
 
     /**

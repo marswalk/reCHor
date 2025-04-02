@@ -22,7 +22,7 @@ public record Stop(String name, String platformName, double longitude, double la
      * Compact constructor that validates the input parameters.
      */
     public Stop {
-        Objects.requireNonNull(name, "Haltestellenname cannot be null");
+        Objects.requireNonNull(name);
         Preconditions.checkArgument(longitude >= -180 && longitude <= 180);
         Preconditions.checkArgument(latitude >= -90 && latitude <= 90);
     }

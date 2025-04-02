@@ -8,19 +8,21 @@ import ch.epfl.rechor.Preconditions;
  * the next 7 bits represent the number of changes, and the 32 least significant bits represent the payload.
  * The class is non-instantiable.
  *
+ * <ul>
+ *     Bits:
+ *     <li>63: 0</li>
+ *     <li>62-51: departure time (or 0 if none) (12 bits)</li>
+ *     <li>50-39: arrival time (12 bits)</li>
+ *     <li>38-32: changes (7 bits)</li>
+ *     <li>31-0: payload (32 bits)</li>
+ * </ul>
+ *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
  */
 public final class PackedCriteria {
 
     private PackedCriteria() {}
-
-    // bits:
-    // 63: 0
-    // 62-51: departure time (or 0 if none) (12 bits)
-    // 50-39: arrival time (12 bits)
-    // 38-32: changes (7 bits)
-    // 31-0: payload (32 bits)
 
     /**
      * Packs criteria without a departure time.
