@@ -11,7 +11,7 @@ public interface Platforms extends Indexed {
      * Returns the platform name for the given index
      *
      * @param id platform index
-     * @return platform name (eg 70 or A) (may be empty)
+     * @return platform name (e.g. 70 or A) (can be empty)
      * @throws IndexOutOfBoundsException for invalid indexes
      */
     String name(int id);

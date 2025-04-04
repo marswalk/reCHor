@@ -43,9 +43,6 @@ public final class JourneyExtractor {
 
         TimeTable timeTable = profile.timeTable();
         LocalDate date = profile.date();
-        Connections connections = profile.connections();
-        Trips trips = profile.trips();
-
         List<Journey> journeys = new ArrayList<>();
         ParetoFront depStationFront = profile.forStation(depStationId);
 
@@ -80,7 +77,6 @@ public final class JourneyExtractor {
     private static Journey extractJourney(TimeTable timeTable, LocalDate date, Profile profile,
                                           int depStationId, int depMins, int arrMins, int changes,
                                           int firstConnId, int stopsToTravel) {
-        Stations stations = timeTable.stations();
         Connections connections = profile.connections();
         Trips trips = profile.trips();
 
@@ -201,7 +197,7 @@ public final class JourneyExtractor {
     }
 
     /**
-     * Finds the index of the final connection (i.e. after traveling a specified number of stops.
+     * Finds the index of the final connection (i.e. after traveling a specified number of stops).
      */
     private static int findFinalConnectionIndex(Connections connections, int startConnId, int stopsToTravel) {
         int currentConnId = startConnId;
