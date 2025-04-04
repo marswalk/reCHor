@@ -111,7 +111,7 @@ public final class ParetoFront {
             // makes sense that even so that in case the capacity is insufficiently great, we can for example
             // "increase" the array's size by a factor like 1.5
             // essentially then copying all tuples, adding the other one with lexicographical order preserved
-            // if no capacity issue, then simpler and we can just use arraycopy
+            // if no capacity issue we can just use arraycopy
             size = 0;
         }
 
@@ -376,15 +376,6 @@ public final class ParetoFront {
 
         private static String formatTime(int minutes) {
             return String.format("%02d:%02d", minutes / 60, minutes % 60);
-        }
-
-        private static String formatTuple(long tuple) {
-            return String.format("%s%s/%dchg",
-                    PackedCriteria.hasDepMins(tuple)
-                            ? formatTime(PackedCriteria.depMins(tuple)) + "-"
-                            : "",
-                    formatTime(PackedCriteria.arrMins(tuple)),
-                    PackedCriteria.changes(tuple));
         }
     }
 }

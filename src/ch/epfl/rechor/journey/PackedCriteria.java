@@ -22,6 +22,27 @@ import ch.epfl.rechor.Preconditions;
  */
 public final class PackedCriteria {
 
+    // Time constants
+    private static final int MIN_MINUTES = -240;
+    private static final int MAX_MINUTES = 2880;
+    private static final int TIME_OFFSET = 240;
+    private static final int TIME_MASK = 0xFFF;
+    private static final int TIME_MAX_VALUE = 4095;
+
+    // Changes constants
+    private static final int MIN_CHANGES = 0;
+    private static final int MAX_CHANGES = 127;
+    private static final int CHANGES_MASK = 0x7F;
+
+    // Bit positions
+    private static final int DEP_TIME_SHIFT = 51;
+    private static final int ARR_TIME_SHIFT = 39;
+    private static final int CHANGES_SHIFT = 32;
+
+    // Masks
+    private static final long PAYLOAD_MASK = 0xFFFFFFFFFL;
+    private static final long DEP_TIME_MASK = 0xFFFL << DEP_TIME_SHIFT;
+
     private PackedCriteria() {}
 
     /**
@@ -33,12 +54,12 @@ public final class PackedCriteria {
      * @throws IllegalArgumentException if arrMins or changes are out of bounds.
      */
     public static long pack(int arrMins, int changes, int payload) {
-        Preconditions.checkArgument(arrMins >= -240 && arrMins < 2880);
-        Preconditions.checkArgument(changes >= 0 && changes < 128);
+        Preconditions.checkArgument(arrMins >= MIN_MINUTES && arrMins < MAX_MINUTES);
+        Preconditions.checkArgument(changes >= MIN_CHANGES && changes < MAX_CHANGES + 1);
 
-        int elapsedTime = arrMins + 240; // Minutes since 8pm day before
-        long packedArrival = (elapsedTime & 0xFFFL) << 39;
-        long packedChanges = (changes & 0x7FL) << 32;
+        int elapsedTime = arrMins + TIME_OFFSET; // Minutes since 8pm day before
+        long packedArrival = (long) elapsedTime << ARR_TIME_SHIFT;
+        long packedChanges = (long) changes << CHANGES_SHIFT;
         long packedPayload = Integer.toUnsignedLong(payload);
 
         return packedArrival | packedChanges | packedPayload;
@@ -50,7 +71,7 @@ public final class PackedCriteria {
      * @return true if the criteria has a departure time, false otherwise
      */
     public static boolean hasDepMins(long criteria) {
-        return ((criteria >> 51) & 0xFFF) != 0;
+        return ((criteria >> DEP_TIME_SHIFT) & TIME_MASK) != 0;
     }
 
     /**
@@ -61,8 +82,8 @@ public final class PackedCriteria {
      */
     public static int depMins(long criteria) {
         Preconditions.checkArgument(hasDepMins(criteria));
-        int storedDep = (int) ((criteria >> 51) & 0xFFF);
-        return (4095 - storedDep) - 240; // Takes (1's(!)) complement and converts to minutes since midnight
+        int storedDep = (int) ((criteria >> DEP_TIME_SHIFT) & TIME_MASK);
+        return (TIME_MAX_VALUE - storedDep) - TIME_OFFSET; // Takes (1's(!)) complement and converts to minutes since midnight
     }
 
     /**
@@ -71,8 +92,8 @@ public final class PackedCriteria {
      * @return the arrival time in minutes after midnight
      */
     public static int arrMins(long criteria) {
-        int storedArr = (int) ((criteria >> 39) & 0xFFF);
-        return storedArr - 240; // Converts to minutes since midnight
+        int storedArr = (int) ((criteria >> ARR_TIME_SHIFT) & TIME_MASK);
+        return storedArr - TIME_OFFSET; // Converts to minutes since midnight
     }
 
     /**
@@ -81,7 +102,7 @@ public final class PackedCriteria {
      * @return the number of changes
      */
     public static int changes(long criteria) {
-        return (int) ((criteria >> 32) & 0x7F);
+        return (int) ((criteria >> CHANGES_SHIFT) & CHANGES_MASK);
     }
 
     /**
@@ -90,7 +111,7 @@ public final class PackedCriteria {
      * @return the payload
      */
     public static int payload(long criteria) {
-        return (int) (criteria & 0xFFFFFFFFL);
+        return (int) (criteria & PAYLOAD_MASK);
     }
 
     /**
@@ -114,7 +135,7 @@ public final class PackedCriteria {
      * @return the arrival time in minutes after midnight
      */
     public static long withoutDepMins(long criteria) {
-        return criteria & ~(0xFFFL << 51);
+        return criteria & ~DEP_TIME_MASK;
     }
 
     /**
@@ -125,9 +146,9 @@ public final class PackedCriteria {
      * @throws IllegalArgumentException if depMins is out of bounds
      */
     public static long withDepMins(long criteria, int depMins) {
-        Preconditions.checkArgument(depMins >= -240 && depMins < 2880);
-        int storedDep = 4095 - (depMins + 240);
-        return (withoutDepMins(criteria)) | ((long) storedDep << 51); // for safety lets clear the depMins first
+        Preconditions.checkArgument(depMins >= MIN_MINUTES && depMins < MAX_MINUTES);
+        int storedDep = TIME_MAX_VALUE - (depMins + TIME_OFFSET);
+        return (withoutDepMins(criteria)) | ((long) storedDep << DEP_TIME_SHIFT); // for safety lets clear the depMins first
     }
 
     /**
@@ -138,8 +159,8 @@ public final class PackedCriteria {
      */
     public static long withAdditionalChange(long criteria) {
         int changes = changes(criteria);
-        if (changes == 127) throw new IllegalArgumentException("Cannot add more changes to criteria!");
-        return (criteria + (1L << 32)); // Risky if changes = 127 → overflows to 8th bit, hence the check in line 78
+        if (changes == MAX_CHANGES) throw new IllegalArgumentException("Cannot add more changes to criteria!");
+        return (criteria + (1L << CHANGES_SHIFT)); // Risky if changes = 127 → overflows to 8th bit, hence the check
     }
 
     /**
@@ -149,7 +170,6 @@ public final class PackedCriteria {
      * @return packed criteria as a long
      */
     public static long withPayload(long criteria, int payload) {
-        return (criteria & ~0xFFFFFFFFL) | Integer.toUnsignedLong(payload);
+        return (criteria & ~PAYLOAD_MASK) | Integer.toUnsignedLong(payload);
     }
-
 }
