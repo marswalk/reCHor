@@ -87,8 +87,8 @@ public final class IcalBuilder {
     }
 
     /**
-     * Adds to the event being built
-     * a line whose name is the one given and the value is the textual representation of the
+     * Adds to the event being built a line
+     * whose name is the one given and the value is the textual representation of the
      * date/time given, in the format specified in §2.1.6
      * @param name name of the "attribute" of the event in iCal format (DTSTART, DTEND, etc.)
      * @param dateTime the date and time to assign to the attribute
@@ -98,8 +98,7 @@ public final class IcalBuilder {
         // this time the hours is 2 digits HH instead of H (noticable when 0h... urgh)
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
         String formattedDate = dateTime.format(formatter);
-        String line = name.name() + ":" + formattedDate;
-        appendLine(line);
+        add(name, formattedDate);
         return this;
     }
 

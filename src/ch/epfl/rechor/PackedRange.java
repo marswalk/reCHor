@@ -24,10 +24,8 @@ public final class PackedRange {
      * @throws IllegalArgumentException if start or length cannot be represented
      */
     public static int pack(int startInclusive, int endExclusive) {
-        Preconditions.checkArgument(startInclusive <= 0xFFFFFF);
         int length = endExclusive - startInclusive;
-        Preconditions.checkArgument((length >= 0) && (length <= 255));
-        // preconditions are verified in the pack Bits32_24_8
+        // int length validation already in Bits32_24_8.pack
         return Bits32_24_8.pack(startInclusive, length);
     }
 

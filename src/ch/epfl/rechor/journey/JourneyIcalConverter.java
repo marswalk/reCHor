@@ -42,8 +42,8 @@ public final class JourneyIcalConverter {
 
         StringJoiner sj = new StringJoiner("\\n");
         for (Journey.Leg leg : journey.legs()) {
-            // must use case instead of just passing in leg because apparantly if you tried to call
-            // FormatterFr.formatLeg(leg) directly, you’d be passing in a Journey.Leg (the interface type).
+            // must use case instead of using the two methods taking different parameters of formatLeg
+            // as that way you’d be passing in a Journey.Leg (the interface type).
             // Because method overload resolution in Java is performed at compile time based on the declared type,
             // the compiler wouldn’t know which specific overload to call.
             switch (leg) {
