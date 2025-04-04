@@ -13,8 +13,6 @@ import ch.epfl.rechor.Preconditions;
  * @param platformName The name of the platform or track (null if it's a station).
  * @param longitude    The longitude of the stop in degrees (-180 to 180).
  * @param latitude     The latitude of the stop in degrees (-90 to 90).
- * @throws NullPointerException     if the name is null.
- * @throws IllegalArgumentException if longitude is not in [-180, 180] or latitude is not in [-90, 90].
  */
 public record Stop(String name, String platformName, double longitude, double latitude) {
 

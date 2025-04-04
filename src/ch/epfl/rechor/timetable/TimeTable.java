@@ -54,7 +54,7 @@ public interface TimeTable {
      * then it represents a station index. Otherwise, it represents a track or platform index,
      * which can be calculated by subtracting the number of stations existing in the timetable
      * from the stop index.
-     *
+     * <p>
      * For example, if there are 1000 stations and 2000 tracks or platforms, stop index 500
      * represents station index 500, while stop index 1700 represents track/platform index 700.
      * </p>
@@ -75,7 +75,7 @@ public interface TimeTable {
      * then it represents a station index. Otherwise, it represents a track or platform index,
      * which can be calculated by subtracting the number of stations existing in the timetable
      * from the stop index.
-     *
+     * <p>
      * For example, if there are 1000 stations and 2000 tracks or platforms, stop index 500
      * represents station index 500, while stop index 1700 represents track/platform index 700.
      * </p>

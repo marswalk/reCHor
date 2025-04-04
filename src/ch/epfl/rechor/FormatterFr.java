@@ -25,7 +25,7 @@ public final class FormatterFr {
      * @return a formatted string representing the duration
      */
     public static String formatDuration(Duration duration) {
-        String durationString = new String();
+        String durationString = "";
         long hours = duration.toHours();
         long minutes = duration.minusHours(hours).toMinutes();
         if (hours > 0) {

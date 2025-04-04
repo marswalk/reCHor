@@ -22,7 +22,7 @@ public final class IcalBuilder {
      */
     public enum Component {
         VCALENDAR,
-        VEVENT;
+        VEVENT
     }
 
     /**
@@ -33,12 +33,12 @@ public final class IcalBuilder {
         END, // This marks the end of a component
         PRODID, // The identifier for the product that created the calendar
         VERSION, // The version of the iCalendar format
-        UID, // random 32 hex characters uniquely identifying the event (given randomness of UUID method and 2^128 possibilities, probability of UUID repetition is negligible and we can consider it to be unique)
+        UID, // random 32 hex characters uniquely identifying the event
         DTSTAMP, // which gives the date and time WHEN THE EVENT WAS CREATED (NOT THAT OF THE EVENT ITSELF!)
         DTSTART, // The start date and time of the event
         DTEND, // The end date and time of the event
         SUMMARY, // A brief summary or title of the event
-        DESCRIPTION; // A detailed description of the event (as per format given using FormatterFr)
+        DESCRIPTION // A detailed description of the event (as per format given using FormatterFr)
     }
 
     private void appendLine(String line) {

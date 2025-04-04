@@ -56,7 +56,8 @@ public final class ParetoFront {
     }
 
     /**
-     * Performs an action for each tuple in lexicographical order (this being the order in which the tuples are stored in the array).
+     * Performs an action for each tuple in lexicographical order
+     * (this being the order in which the tuples are stored in the array).
      *
      * @param action Consumer to process each packed tuple
      */
@@ -98,7 +99,8 @@ public final class ParetoFront {
      */
     public static final class Builder {
         private long[] tuples;
-        // contains the criteria (tuples) in packed form and is "resized" as needed according to the methods, sorted lexicographically
+        // contains the criteria (tuples) in packed form and is "resized" as needed according to the methods
+        // sorted lexicographically
         private int size;
         // to know the logical (effective) size of the boundary
 
@@ -200,7 +202,6 @@ public final class ParetoFront {
             for (int readPos = insertPos; readPos < size; readPos++) {
                 if (!PackedCriteria.dominatesOrIsEqual(packedTuple, tuples[readPos])) {
                     tuples[writePos++] = tuples[readPos];
-                } else {
                 }
             }
             size = writePos;
@@ -375,16 +376,6 @@ public final class ParetoFront {
 
         private static String formatTime(int minutes) {
             return String.format("%02d:%02d", minutes / 60, minutes % 60);
-        }
-
-        // Helper method for debugging
-        private String debugArrayToString() {
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < size; i++) {
-                sb.append("\n\t").append(i).append(". ").append(formatTuple(tuples[i]));
-                if (i < size - 1) sb.append(", ");
-            }
-            return sb.append("\n] (size: ").append(size).append(")").toString();
         }
 
         private static String formatTuple(long tuple) {

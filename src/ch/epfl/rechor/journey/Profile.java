@@ -119,9 +119,6 @@ public record Profile(
          * @throws IndexOutOfBoundsException if the station index is invalid
          */
         public void setForStation(int stationId, ParetoFront.Builder builder) {
-            // if (stationId < 0 || stationId >= stationBuilders.length) {
-            //    throw new IndexOutOfBoundsException("Invalid station ID: " + stationId);
-            // }
             stationBuilders[stationId] = builder;
         }
 

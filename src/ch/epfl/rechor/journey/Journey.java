@@ -68,7 +68,7 @@ public record Journey(List<Leg> legs) {
         /**
          * Represents an intermediate stop between departure and arrival.
          */
-        public record IntermediateStop(Stop stop, LocalDateTime arrTime, LocalDateTime depTime) {
+        record IntermediateStop(Stop stop, LocalDateTime arrTime, LocalDateTime depTime) {
             /**
              * Constructs an IntermediateStop.
              *
@@ -87,7 +87,7 @@ public record Journey(List<Leg> legs) {
         /**
          * Represents a transport leg of a journey, specifying vehicle, route, and destination.
          */
-        public record Transport(Stop depStop, LocalDateTime depTime, Stop arrStop, LocalDateTime arrTime, List<IntermediateStop> intermediateStops, Vehicle vehicle, String route, String destination) implements Leg {
+        record Transport(Stop depStop, LocalDateTime depTime, Stop arrStop, LocalDateTime arrTime, List<IntermediateStop> intermediateStops, Vehicle vehicle, String route, String destination) implements Leg {
             /**
              * Constructs a Transport leg.
              *
@@ -118,7 +118,7 @@ public record Journey(List<Leg> legs) {
         /**
          * Represents a foot leg of a journey, possibly used for transfers.
          */
-        public record Foot(Stop depStop, LocalDateTime depTime, Stop arrStop, LocalDateTime arrTime) implements Leg {
+        record Foot(Stop depStop, LocalDateTime depTime, Stop arrStop, LocalDateTime arrTime) implements Leg {
             /**
              * Constructs a Foot leg.
              *
