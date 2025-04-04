@@ -11,7 +11,8 @@ package ch.epfl.rechor;
  */
 public final class PackedRange {
 
-    private PackedRange() {}
+    private PackedRange() {
+    }
 
     /**
      * Packs an interval of integers into a single int.
@@ -19,7 +20,7 @@ public final class PackedRange {
      * and the 8 least significant bits represent its length.
      *
      * @param startInclusive the start value (inclusive)
-     * @param endExclusive the end value (exclusive)
+     * @param endExclusive   the end value (exclusive)
      * @return an int packing the interval
      * @throws IllegalArgumentException if start or length cannot be represented
      */

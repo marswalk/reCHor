@@ -12,11 +12,11 @@ import java.time.format.DateTimeFormatter;
  *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
- *
  */
 public final class FormatterFr {
 
-    private FormatterFr() {}
+    private FormatterFr() {
+    }
 
     /**
      * Formats a duration in hours and minutes (e.g. "2 h 15 min").

@@ -2,6 +2,9 @@ package ch.epfl.rechor.timetable;
 
 /**
  * Represents indexed public transport trips/runs
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public interface Trips extends Indexed {
 

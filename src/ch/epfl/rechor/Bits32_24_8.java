@@ -10,19 +10,20 @@ package ch.epfl.rechor;
  * <li>The 24-bit value must fit in 24 bits, and the 8-bit value must fit in 8 bits.</li>
  * </ul>
  * The class is non-instantiable.
- *
+ * <p>
  *  @author Guanting Wen (392412)
  *  @author Ben Fall (373176)
  */
 public class Bits32_24_8 {
 
-    private Bits32_24_8() {}
+    private Bits32_24_8() {
+    }
 
     /**
      * Packs a 24-bit value and an 8-bit value into a single 32-bit integer.
      *
      * @param bits24 the 24 most significant bits (must fit in 24 bits)
-     * @param bits8 the 8 least significant bits (must fit in 8 bits)
+     * @param bits8  the 8 least significant bits (must fit in 8 bits)
      * @return a 32-bit integer with bits24 as the 24 MSBs and bits8 as the 8 LSBs
      * @throws IllegalArgumentException if bits24 doesn't fit in 24 bits or bits8 doesn't fit in 8 bits
      */

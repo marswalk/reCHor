@@ -14,6 +14,9 @@ import java.util.Objects;
  * <p>
  * A profile contains Pareto frontiers for all stations in the timetable with respect to
  * the destination station. Each frontier contains optimal journey criteria tuples.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public record Profile(
         TimeTable timeTable,
@@ -91,7 +94,7 @@ public record Profile(
          */
         public Builder(TimeTable timeTable, LocalDate date, int arrStationId) {
             this.timeTable = timeTable;
-            this.date=date;
+            this.date = date;
             this.arrStationId = arrStationId;
 
             // Initialize arrays to store Pareto front builders for stations and trips

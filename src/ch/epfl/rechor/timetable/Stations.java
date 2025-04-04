@@ -2,10 +2,14 @@ package ch.epfl.rechor.timetable;
 
 /**
  * Represents indexed stations in a timetable
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public interface Stations extends Indexed {
     /**
      * Returns the station name for the given index
+     *
      * @param id station index
      * @return station name
      * @throws IndexOutOfBoundsException for invalid indexes i.e. less than 0 or greater than or equal to the size returned by size().
@@ -14,6 +18,7 @@ public interface Stations extends Indexed {
 
     /**
      * Returns the longitude in degrees for the given station index
+     *
      * @param id station index
      * @return longitude value
      * @throws IndexOutOfBoundsException for invalid indexes
@@ -22,6 +27,7 @@ public interface Stations extends Indexed {
 
     /**
      * Returns the latitude in degrees for the given station index
+     *
      * @param id station index
      * @return latitude value
      * @throws IndexOutOfBoundsException for invalid indexes

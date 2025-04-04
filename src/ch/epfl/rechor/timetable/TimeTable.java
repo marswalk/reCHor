@@ -4,6 +4,9 @@ import java.time.LocalDate;
 
 /**
  * Represents a complete public transport timetable
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public interface TimeTable {
 
@@ -45,6 +48,7 @@ public interface TimeTable {
     Connections connectionsFor(LocalDate date);
 
     // Default methods
+
     /**
      * Checks if the given stop ID represents a station (and not platform)
      *

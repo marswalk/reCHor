@@ -7,7 +7,8 @@ package ch.epfl.rechor;
  */
 public final class Preconditions {
 
-    private Preconditions() {}
+    private Preconditions() {
+    }
 
     /**
      * Checks whether a condition is true.

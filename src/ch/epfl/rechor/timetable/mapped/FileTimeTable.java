@@ -14,7 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Implementation of TimeTable interface that provides access to timetable data 
+ * Implementation of TimeTable interface that provides access to timetable data
  * stored in flattened format files.
  * <p>
  * The class represents a public transport timetable with data stored in separate files
@@ -22,6 +22,9 @@ import java.util.List;
  * <p>
  * The timetable contains data for stations, station aliases, platforms, routes, transfers,
  * and date-specific trips and connections.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public record FileTimeTable(
         Path directory,
@@ -34,7 +37,7 @@ public record FileTimeTable(
 
     /**
      * Creates a new FileTimeTable instance from a directory containing timetable data files.
-     * 
+     *
      * @param directory the path to the directory containing timetable data files
      * @return a new FileTimeTable instance
      * @throws IOException if can't read file
@@ -43,21 +46,21 @@ public record FileTimeTable(
         // Read string table (using ISO 8859-1 encoding as specified)
         Path strings = directory.resolve("strings.txt");
         List<String> stringTable = List.copyOf(Files.readAllLines(strings, StandardCharsets.ISO_8859_1));
-        
+
         // Map static data files into memory
         ByteBuffer stationsBuffer = map(directory.resolve("stations.bin"));
         ByteBuffer stationAliasesBuffer = map(directory.resolve("station-aliases.bin"));
         ByteBuffer platformsBuffer = map(directory.resolve("platforms.bin"));
         ByteBuffer routesBuffer = map(directory.resolve("routes.bin"));
         ByteBuffer transfersBuffer = map(directory.resolve("transfers.bin"));
-        
+
         // Create buffered instances
         Stations stations = new BufferedStations(stringTable, stationsBuffer);
         StationAliases stationAliases = new BufferedStationAliases(stringTable, stationAliasesBuffer);
         Platforms platforms = new BufferedPlatforms(stringTable, platformsBuffer);
         Routes routes = new BufferedRoutes(stringTable, routesBuffer);
         Transfers transfers = new BufferedTransfers(transfersBuffer);
-        
+
         return new FileTimeTable(
                 directory,
                 stringTable,
@@ -67,7 +70,7 @@ public record FileTimeTable(
                 routes,
                 transfers);
     }
-    
+
     /**
      * Maps a file into memory using memory-mapped byte buffer.
      *
@@ -123,6 +126,7 @@ public record FileTimeTable(
 
     /**
      * {@inheritDoc}
+     *
      * @throws UncheckedIOException if an I/O error occurs while mapping file
      */
     @Override
@@ -140,6 +144,7 @@ public record FileTimeTable(
 
     /**
      * {@inheritDoc}
+     *
      * @throws UncheckedIOException if an I/O error occurs while mapping files
      */
     @Override

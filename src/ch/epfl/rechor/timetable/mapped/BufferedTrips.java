@@ -1,10 +1,12 @@
 package ch.epfl.rechor.timetable.mapped;
 
 import ch.epfl.rechor.timetable.Trips;
+
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.U16;
 import static ch.epfl.rechor.timetable.mapped.Structure.field;
-import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
 
 /**
  * Implementation of Trips interface that provides access to trip data
@@ -15,6 +17,9 @@ import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
  *   <li>ROUTE_ID (U16): Index of the route for this trip</li>
  *   <li>DESTINATION_ID (U16): Index of the final destination name in the string table</li>
  * </ul>
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class BufferedTrips implements Trips {
     // Field indices constants
@@ -23,8 +28,8 @@ public final class BufferedTrips implements Trips {
 
     // Structure definition for trips
     private static final Structure STRUCTURE = new Structure(
-        field(ROUTE_ID, U16),
-        field(DESTINATION_ID, U16)
+            field(ROUTE_ID, U16),
+            field(DESTINATION_ID, U16)
     );
 
     private final List<String> stringTable;
@@ -34,7 +39,7 @@ public final class BufferedTrips implements Trips {
      * Constructs a BufferedTrips instance to access flattened trip data.
      *
      * @param stringTable The table of strings referenced by the flattened data
-     * @param buffer The byte buffer containing the flattened data
+     * @param buffer      The byte buffer containing the flattened data
      */
     public BufferedTrips(List<String> stringTable, ByteBuffer buffer) {
         this.stringTable = stringTable;

@@ -1,4 +1,5 @@
 package ch.epfl.rechor.journey;
+
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -29,6 +30,10 @@ public final class ParetoFront {
         // stores packedTuples without copying it
     }
 
+    private static String formatTime(int minutes) {
+        return String.format("%02d:%02d", minutes / 60, minutes % 60);
+    }
+
     /**
      * Returns the number of tuples in the frontier.
      *
@@ -37,6 +42,7 @@ public final class ParetoFront {
     public int size() {
         return packedTuples.length;
     }
+
     /**
      * Retrieves the packed tuple matching the given arrival time and changes.
      *
@@ -85,13 +91,6 @@ public final class ParetoFront {
         return sb.append("]").toString();
     }
 
-    private static String formatTime(int minutes) {
-        return String.format("%02d:%02d", minutes / 60, minutes % 60);
-    }
-
-
-
-
     /**
      * Mutable builder for constructing {@code ParetoFront} instances.
      * Builder is a statistically nested class of ParetoFront.
@@ -104,7 +103,9 @@ public final class ParetoFront {
         private int size;
         // to know the logical (effective) size of the boundary
 
-        /** Constructs an empty builder. */
+        /**
+         * Constructs an empty builder.
+         */
         public Builder() {
             tuples = new long[2];
             // For example, its initial capacity, when the boundary being built is empty, could be set to 2
@@ -140,9 +141,13 @@ public final class ParetoFront {
             }
         }
 
+        private static String formatTime(int minutes) {
+            return String.format("%02d:%02d", minutes / 60, minutes % 60);
+        }
 
         /**
          * Checks if the frontier is empty.
+         *
          * @return {@code true} if no tuples exist
          */
         public boolean isEmpty() {
@@ -151,12 +156,15 @@ public final class ParetoFront {
 
         /**
          * Removes all tuples from the builder.
+         *
          * @return This builder (for chaining)
          */
         public Builder clear() {
             size = 0;
             return this;
         }
+
+        // Own helper methods for add method
 
         /**
          * Adds a tuple of packed criteria to the Pareto front.
@@ -215,7 +223,6 @@ public final class ParetoFront {
             return this;
         }
 
-        // Own helper methods for add method
         /**
          * Ensures that the internal array has at least the specified capacity.
          * If not, the array is resized to 1.5 times the required capacity.
@@ -280,7 +287,7 @@ public final class ParetoFront {
          * Returns true if all tuples in the given builder, when assigned the specified
          * departure time, are dominated by at least one tuple in this builder.
          *
-         * @param that the builder whose tuples should be checked for domination
+         * @param that    the builder whose tuples should be checked for domination
          * @param depMins the departure time in minutes after midnight to assign to all tuples
          * @return true if all tuples in the given builder are dominated
          */
@@ -366,16 +373,12 @@ public final class ParetoFront {
                     }
 
                     sb.append("Arrival: ").append(formatTime(PackedCriteria.arrMins(tuple)))
-                      .append(", Changes: ").append(PackedCriteria.changes(tuple))
-                      .append(", Payload: ").append(PackedCriteria.payload(tuple))
-                      .append("\n");
+                            .append(", Changes: ").append(PackedCriteria.changes(tuple))
+                            .append(", Payload: ").append(PackedCriteria.payload(tuple))
+                            .append("\n");
                 }
             }
             return sb.append("]").toString();
-        }
-
-        private static String formatTime(int minutes) {
-            return String.format("%02d:%02d", minutes / 60, minutes % 60);
         }
     }
 }

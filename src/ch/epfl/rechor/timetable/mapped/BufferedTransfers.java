@@ -2,11 +2,13 @@ package ch.epfl.rechor.timetable.mapped;
 
 import ch.epfl.rechor.PackedRange;
 import ch.epfl.rechor.timetable.Transfers;
+
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
+import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.U16;
+import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.U8;
 import static ch.epfl.rechor.timetable.mapped.Structure.field;
-import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
 
 /**
  * Implementation of Transfers interface that provides access to transfer data
@@ -23,6 +25,9 @@ import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
  * The table of flattened transfers is ordered such that all transfers arriving at
  * the same station are consecutive. This property allows representing all transfers
  * arriving at a given station as an interval of transfer indices.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class BufferedTransfers implements Transfers {
     // Field indices constants
@@ -134,7 +139,7 @@ public final class BufferedTransfers implements Transfers {
      * @param depStationId departure station ID
      * @param arrStationId arrival station ID
      * @return transfer duration in minutes between stations
-     * @throws NoSuchElementException if no transfer exists
+     * @throws NoSuchElementException    if no transfer exists
      * @throws IndexOutOfBoundsException for invalid station IDs
      */
     @Override

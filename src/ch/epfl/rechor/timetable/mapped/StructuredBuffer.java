@@ -25,6 +25,9 @@ import java.nio.ByteBuffer;
  * <p>
  * The class ensures that unsigned values (U8, U16) are properly interpreted and
  * returned as positive integers regardless of Java's signed byte and short types.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class StructuredBuffer {
     private final Structure structure;
@@ -34,7 +37,7 @@ public final class StructuredBuffer {
      * Constructs a structured buffer.
      *
      * @param structure The data structure description
-     * @param buffer The byte buffer containing flattened data
+     * @param buffer    The byte buffer containing flattened data
      * @throws IllegalArgumentException if buffer size isn't a multiple of structure size
      */
     public StructuredBuffer(Structure structure, ByteBuffer buffer) {
@@ -57,7 +60,7 @@ public final class StructuredBuffer {
     /**
      * Gets an unsigned 8-bit value from the buffer.
      *
-     * @param fieldIndex Field index in the structure
+     * @param fieldIndex   Field index in the structure
      * @param elementIndex Element index in the buffer
      * @return Unsigned value (0-255)
      */
@@ -69,7 +72,7 @@ public final class StructuredBuffer {
     /**
      * Gets an unsigned 16-bit value from the buffer.
      *
-     * @param fieldIndex Field index in the structure
+     * @param fieldIndex   Field index in the structure
      * @param elementIndex Element index in the buffer
      * @return Unsigned value (0-65535)
      */
@@ -81,7 +84,7 @@ public final class StructuredBuffer {
     /**
      * Gets a signed 32-bit value from the buffer.
      *
-     * @param fieldIndex Field index in the structure
+     * @param fieldIndex   Field index in the structure
      * @param elementIndex Element index in the buffer
      * @return Signed 32-bit integer
      */

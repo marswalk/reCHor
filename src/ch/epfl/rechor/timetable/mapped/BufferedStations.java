@@ -1,10 +1,13 @@
 package ch.epfl.rechor.timetable.mapped;
 
 import ch.epfl.rechor.timetable.Stations;
+
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.S32;
+import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.U16;
 import static ch.epfl.rechor.timetable.mapped.Structure.field;
-import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
 
 /**
  * Implementation of Stations interface that provides access to stations
@@ -19,6 +22,9 @@ import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
  * <p>
  * Geographic coordinates are stored as S32 integers in an anonymous unit equivalent
  * to 2^-24 degrees, which provides centimeter-level precision.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class BufferedStations implements Stations {
     // Field indices constants
@@ -28,9 +34,9 @@ public final class BufferedStations implements Stations {
 
     // Structure definition for stations
     private static final Structure STRUCTURE = new Structure(
-        field(NAME_ID, U16),
-        field(LON, S32),
-        field(LAT, S32)
+            field(NAME_ID, U16),
+            field(LON, S32),
+            field(LAT, S32)
     );
 
     // Conversion factor for coordinates (2^-32)
@@ -43,7 +49,7 @@ public final class BufferedStations implements Stations {
      * Constructs a BufferedStations instance to access flattened station data.
      *
      * @param stringTable The table of strings referenced by the flattened data
-     * @param buffer The byte buffer containing the flattened data
+     * @param buffer      The byte buffer containing the flattened data
      */
     public BufferedStations(List<String> stringTable, ByteBuffer buffer) {
         this.stringTable = stringTable;

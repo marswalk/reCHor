@@ -9,28 +9,34 @@ import ch.epfl.rechor.timetable.Trips;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Journey extractor that converts optimization criteria from a profile into complete journeys.
  * <p>
  * This class is not instantiable and provides a single static method to extract journeys
  * from a profile for a specific departure station.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class JourneyExtractor {
 
     // Private constructor to prevent instantiation
-    private JourneyExtractor() {}
+    private JourneyExtractor() {
+    }
 
     /**
      * Extracts all optimal journeys from the given profile for the specified departure station.
      * <p>
      * The returned journeys are sorted first by departure time (ascending), then by arrival time (ascending).
      *
-     * @param profile the profile containing Pareto frontiers for all stations
+     * @param profile      the profile containing Pareto frontiers for all stations
      * @param depStationId the departure station index
      * @return a list of all optimal journeys from the departure station, sorted by departure time then arrival time
-     * @throws NullPointerException if the profile is null
+     * @throws NullPointerException      if the profile is null
      * @throws IndexOutOfBoundsException if the departure station ID is invalid
      */
     public static List<Journey> journeys(Profile profile, int depStationId) {
@@ -72,8 +78,8 @@ public final class JourneyExtractor {
      * Extracts a complete journey based on the first connection and optimization criteria.
      */
     private static Journey extractJourney(TimeTable timeTable, LocalDate date, Profile profile,
-                                         int depStationId, int depMins, int arrMins, int changes,
-                                         int firstConnId, int stopsToTravel) {
+                                          int depStationId, int depMins, int arrMins, int changes,
+                                          int firstConnId, int stopsToTravel) {
         Stations stations = timeTable.stations();
         Connections connections = profile.connections();
         Trips trips = profile.trips();

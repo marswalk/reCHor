@@ -1,10 +1,12 @@
 package ch.epfl.rechor.timetable.mapped;
 
 import ch.epfl.rechor.timetable.StationAliases;
+
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.U16;
 import static ch.epfl.rechor.timetable.mapped.Structure.field;
-import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
 
 /**
  * Implementation of StationAliases interface that provides access to alternative
@@ -18,6 +20,9 @@ import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
  * <p>
  * This allows mapping from alternative names (like "Losanna") to canonical names
  * (like "Lausanne") for station searching functionality.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class BufferedStationAliases implements StationAliases {
     // Field indices constants
@@ -26,8 +31,8 @@ public final class BufferedStationAliases implements StationAliases {
 
     // Structure definition for station aliases
     private static final Structure STRUCTURE = new Structure(
-        field(ALIAS_ID, U16),
-        field(STATION_NAME_ID, U16)
+            field(ALIAS_ID, U16),
+            field(STATION_NAME_ID, U16)
     );
 
     private final List<String> stringTable;
@@ -37,7 +42,7 @@ public final class BufferedStationAliases implements StationAliases {
      * Constructs a BufferedStationAliases instance to access flattened station alias data.
      *
      * @param stringTable The table of strings referenced by the flattened data
-     * @param buffer The byte buffer containing the flattened data
+     * @param buffer      The byte buffer containing the flattened data
      */
     public BufferedStationAliases(List<String> stringTable, ByteBuffer buffer) {
         this.stringTable = stringTable;

@@ -40,13 +40,15 @@ public final class PackedCriteria {
     private static final int CHANGES_SHIFT = 32;
 
     // Masks
-    private static final long PAYLOAD_MASK = 0xFFFFFFFFFL;
+    private static final long PAYLOAD_MASK = 0xFFFFFFFFL;
     private static final long DEP_TIME_MASK = 0xFFFL << DEP_TIME_SHIFT;
 
-    private PackedCriteria() {}
+    private PackedCriteria() {
+    }
 
     /**
      * Packs criteria without a departure time.
+     *
      * @param arrMins arrival time in minutes after midnight (must be between -240 and 2880)
      * @param changes number of changes (0 <= changes < 128)
      * @param payload payload (will be converted without sign extension)
@@ -67,6 +69,7 @@ public final class PackedCriteria {
 
     /**
      * Checks if the criteria has a departure time.
+     *
      * @param criteria the packed criteria
      * @return true if the criteria has a departure time, false otherwise
      */
@@ -76,6 +79,7 @@ public final class PackedCriteria {
 
     /**
      * Extracts the departure time in minutes after midnight.
+     *
      * @param criteria the packed criteria
      * @return the departure time in minutes after midnight
      * @throws IllegalArgumentException if the criteria does not have a departure time
@@ -88,6 +92,7 @@ public final class PackedCriteria {
 
     /**
      * Extracts the arrival time in minutes after midnight.
+     *
      * @param criteria the packed criteria
      * @return the arrival time in minutes after midnight
      */
@@ -98,6 +103,7 @@ public final class PackedCriteria {
 
     /**
      * Extracts the number of changes.
+     *
      * @param criteria the packed criteria
      * @return the number of changes
      */
@@ -107,6 +113,7 @@ public final class PackedCriteria {
 
     /**
      * Extracts the payload.
+     *
      * @param criteria the packed criteria
      * @return the payload
      */
@@ -117,6 +124,7 @@ public final class PackedCriteria {
     /**
      * Checks if the first criteria dominates the second criteria.
      * A criteria dominates another if it has a later arrival time, fewer changes, and a later departure time.
+     *
      * @param criteria1 the first packed criteria
      * @param criteria2 the second packed criteria
      * @return true if criteria1 dominates criteria2, false otherwise
@@ -131,6 +139,7 @@ public final class PackedCriteria {
 
     /**
      * Extracts the arrival time in minutes after midnight.
+     *
      * @param criteria the packed criteria
      * @return the arrival time in minutes after midnight
      */
@@ -140,8 +149,9 @@ public final class PackedCriteria {
 
     /**
      * Packs criteria with a (different) departure time.
+     *
      * @param criteria the packed criteria
-     * @param depMins the departure time in minutes after midnight (must be between -240 and 2880)
+     * @param depMins  the departure time in minutes after midnight (must be between -240 and 2880)
      * @return packed criteria as a long
      * @throws IllegalArgumentException if depMins is out of bounds
      */
@@ -153,6 +163,7 @@ public final class PackedCriteria {
 
     /**
      * Packs criteria with an additional change.
+     *
      * @param criteria the packed criteria
      * @return packed criteria as a long
      * @throws IllegalArgumentException if the criteria already has 127 changes
@@ -165,8 +176,9 @@ public final class PackedCriteria {
 
     /**
      * Packs criteria with a (different) payload.
+     *
      * @param criteria the packed criteria
-     * @param payload the payload
+     * @param payload  the payload
      * @return packed criteria as a long
      */
     public static long withPayload(long criteria, int payload) {

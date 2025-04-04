@@ -1,18 +1,17 @@
 package ch.epfl.rechor.journey;
 
-import java.util.Objects;
-
 import ch.epfl.rechor.Preconditions;
+
+import java.util.Objects;
 
 /**
  * Public transport stop.
- *
- * @author Guanting Wen (392412)
  *
  * @param name         The name of the stop (station name if it's a platform).
  * @param platformName The name of the platform or track (null if it's a station).
  * @param longitude    The longitude of the stop in degrees (-180 to 180).
  * @param latitude     The latitude of the stop in degrees (-90 to 90).
+ * @author Guanting Wen (392412)
  */
 public record Stop(String name, String platformName, double longitude, double latitude) {
 

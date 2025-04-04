@@ -2,6 +2,9 @@ package ch.epfl.rechor.timetable;
 
 /**
  * Represents indexed connections between stops, ordered by decreasing departure time
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public interface Connections extends Indexed {
 

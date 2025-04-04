@@ -21,66 +21,16 @@ package ch.epfl.rechor.timetable.mapped;
  *     field(NAME_ID, U16),    // NAME_ID is the index of the platform name in the string table
  *     field(STATION_ID, U16));
  * </pre>
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class Structure {
-
-    /**
-     * Represents the three possible field types for flattened data.
-     */
-    public enum FieldType {
-        /** 8 bits (1 byte) interpreted as an unsigned integer (0 to 255) */
-        U8(1),
-
-        /** 16 bits (2 bytes) interpreted as an unsigned integer (0 to 65535) */
-        U16(2),
-
-        /** 32 bits (4 bytes) interpreted as a signed integer (-2^31 to 2^31-1) */
-        S32(4);
-
-        private final int size;
-
-        FieldType(int size) {
-            this.size = size;
-        }
-
-        public int size() {
-            return size;
-        }
-    }
-
-    /**
-     * Represents a field with its index and type.
-     */
-    public record Field(int index, FieldType type) {
-        /**
-         * Creates a field with the given index and type.
-         *
-         * @param index the field index in the structure
-         * @param type the field type
-         * @throws NullPointerException if type is null
-         */
-        public Field {
-            if (type == null)
-                throw new NullPointerException();
-        }
-    }
 
     // Array storing the offset (in bytes) of each field in the structure
     private final int[] fieldOffsets;
     // Total size of the structure in bytes
     private final int totalSize;
-
-    /**
-     * Creates a field with the given index and type.
-     *
-     * @param index the field index
-     * @param type the field type
-     * @return a new Field instance
-     */
-    public static Field field(int index, FieldType type) {
-        return new Field(index, type);
-    }
-    // the whole point of method field is so that you can omit new Field() when creating a new Field instance ?
 
     /**
      * Constructs a structure with the given fields.
@@ -110,6 +60,17 @@ public final class Structure {
     }
 
     /**
+     * Creates a field with the given index and type.
+     *
+     * @param index the field index
+     * @param type  the field type
+     * @return a new Field instance
+     */
+    public static Field field(int index, FieldType type) {
+        return new Field(index, type);
+    }
+
+    /**
      * Returns the total size in bytes of the structure.
      *
      * @return the total size in bytes
@@ -117,16 +78,64 @@ public final class Structure {
     public int totalSize() {
         return totalSize;
     }
+    // the whole point of method field is so that you can omit new Field() when creating a new Field instance ?
 
     /**
      * Returns the index of the first byte of a field in the byte array.
      *
-     * @param fieldIndex the index of the field
+     * @param fieldIndex   the index of the field
      * @param elementIndex the index of the element
      * @return the byte offset in the array
      * @throws IndexOutOfBoundsException if fieldIndex is invalid
      */
     public int offset(int fieldIndex, int elementIndex) {
         return elementIndex * totalSize + fieldOffsets[fieldIndex];
+    }
+
+    /**
+     * Represents the three possible field types for flattened data.
+     */
+    public enum FieldType {
+        /**
+         * 8 bits (1 byte) interpreted as an unsigned integer (0 to 255)
+         */
+        U8(1),
+
+        /**
+         * 16 bits (2 bytes) interpreted as an unsigned integer (0 to 65535)
+         */
+        U16(2),
+
+        /**
+         * 32 bits (4 bytes) interpreted as a signed integer (-2^31 to 2^31-1)
+         */
+        S32(4);
+
+        private final int size;
+
+        FieldType(int size) {
+            this.size = size;
+        }
+
+        public int size() {
+            return size;
+        }
+    }
+
+    /**
+     * Represents a field with its index and type.
+     */
+    public record Field(int index, FieldType type) {
+        /**
+         * Creates a field with the given index and type.
+         *
+         * @param index the field index in the structure
+         * @param type  the field type
+         * @throws NullPointerException if type is null
+         */
+        public Field {
+            if (type == null)
+                throw new NullPointerException();
+        }
     }
 }

@@ -12,13 +12,13 @@ import java.util.UUID;
  *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
- *
  */
 
 public final class JourneyIcalConverter {
 
     // Private so no instantiation (as with FormatterFr)
-    private JourneyIcalConverter() {}
+    private JourneyIcalConverter() {
+    }
 
     /**
      * Converts a Journey to an iCalendar format.

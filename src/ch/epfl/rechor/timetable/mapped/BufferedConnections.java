@@ -1,10 +1,13 @@
 package ch.epfl.rechor.timetable.mapped;
 
 import ch.epfl.rechor.timetable.Connections;
+
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+
+import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.S32;
+import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.U16;
 import static ch.epfl.rechor.timetable.mapped.Structure.field;
-import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
 
 /**
  * Implementation of Connections interface that provides access to connection data
@@ -20,6 +23,9 @@ import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
  * </ul>
  * <p>
  * Additionally, a separate buffer contains the next connection ID for each connection.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class BufferedConnections implements Connections {
     // Field indices constants
@@ -35,11 +41,11 @@ public final class BufferedConnections implements Connections {
 
     // Structure definition for connections
     private static final Structure STRUCTURE = new Structure(
-        field(DEP_STOP_ID, U16),
-        field(DEP_MINUTES, U16),
-        field(ARR_STOP_ID, U16),
-        field(ARR_MINUTES, U16),
-        field(TRIP_POS_ID, S32)
+            field(DEP_STOP_ID, U16),
+            field(DEP_MINUTES, U16),
+            field(ARR_STOP_ID, U16),
+            field(ARR_MINUTES, U16),
+            field(TRIP_POS_ID, S32)
     );
 
     private final StructuredBuffer buffer;
@@ -48,7 +54,7 @@ public final class BufferedConnections implements Connections {
     /**
      * Constructs a BufferedConnections instance to access flattened connection data.
      *
-     * @param buffer The byte buffer containing the connection data
+     * @param buffer     The byte buffer containing the connection data
      * @param succBuffer The byte buffer containing the next connection IDs
      */
     public BufferedConnections(ByteBuffer buffer, ByteBuffer succBuffer) {

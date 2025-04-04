@@ -1,10 +1,12 @@
 package ch.epfl.rechor.timetable.mapped;
 
 import ch.epfl.rechor.timetable.Platforms;
+
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.U16;
 import static ch.epfl.rechor.timetable.mapped.Structure.field;
-import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
 
 /**
  * Implementation of Platforms interface that provides access to platforms/tracks
@@ -17,6 +19,9 @@ import static ch.epfl.rechor.timetable.mapped.Structure.FieldType.*;
  * </ul>
  * <p>
  * This allows mapping platforms (like "1", "70", "1AB") to their respective stations.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class BufferedPlatforms implements Platforms {
     // Field indices constants
@@ -25,8 +30,8 @@ public final class BufferedPlatforms implements Platforms {
 
     // Structure definition for platforms
     private static final Structure STRUCTURE = new Structure(
-        field(NAME_ID, U16),
-        field(STATION_ID, U16)
+            field(NAME_ID, U16),
+            field(STATION_ID, U16)
     );
 
     private final List<String> stringTable;
@@ -36,7 +41,7 @@ public final class BufferedPlatforms implements Platforms {
      * Constructs a BufferedPlatforms instance to access flattened platform data.
      *
      * @param stringTable The table of strings referenced by the flattened data
-     * @param buffer The byte buffer containing the flattened data
+     * @param buffer      The byte buffer containing the flattened data
      */
     public BufferedPlatforms(List<String> stringTable, ByteBuffer buffer) {
         this.stringTable = stringTable;

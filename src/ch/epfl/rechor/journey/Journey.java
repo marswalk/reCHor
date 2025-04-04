@@ -13,150 +13,8 @@ import java.util.Objects;
  *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
- *
  */
 public record Journey(List<Leg> legs) {
-
-    /**
-     * A leg of a journey, which can be a foot leg or a transport leg.
-     */
-    public sealed interface Leg {
-        /**
-         * Returns the departure stop of the leg.
-         *
-         * @return the departure stop
-         */
-        Stop depStop();
-
-        /**
-         * Returns the departure time of the leg.
-         *
-         * @return the departure time
-         */
-        LocalDateTime depTime();
-
-        /**
-         * Returns the arrival stop of the leg.
-         *
-         * @return the arrival stop
-         */
-        Stop arrStop();
-
-        /**
-         * Returns the arrival time of the leg.
-         *
-         * @return the arrival time
-         */
-        LocalDateTime arrTime();
-
-        /**
-         * Returns the list of intermediate stops for this leg.
-         *
-         * @return the list of intermediate stops
-         */
-        List<IntermediateStop> intermediateStops();
-
-        /**
-         * Returns the duration of this leg.
-         *
-         * @return the duration of the leg
-         */
-        default Duration duration() {
-            return Duration.between(depTime(), arrTime());
-        }
-
-        /**
-         * Represents an intermediate stop between departure and arrival.
-         */
-        record IntermediateStop(Stop stop, LocalDateTime arrTime, LocalDateTime depTime) {
-            /**
-             * Constructs an IntermediateStop.
-             *
-             * @param stop the intermediate stop
-             * @param arrTime the arrival time at the stop
-             * @param depTime the departure time at the stop
-             * @throws NullPointerException if stop, arrTime, or depTime is null
-             * @throws IllegalArgumentException if depTime is before arrTime
-             */
-            public IntermediateStop {
-                Objects.requireNonNull(stop);
-                Preconditions.checkArgument(!(depTime.isBefore(arrTime)));
-            }
-        }
-
-        /**
-         * Represents a transport leg of a journey, specifying vehicle, route, and destination.
-         */
-        record Transport(Stop depStop, LocalDateTime depTime, Stop arrStop, LocalDateTime arrTime, List<IntermediateStop> intermediateStops, Vehicle vehicle, String route, String destination) implements Leg {
-            /**
-             * Constructs a Transport leg.
-             *
-             * @param depStop the departure stop
-             * @param depTime the departure time
-             * @param arrStop the arrival stop
-             * @param arrTime the arrival time
-             * @param intermediateStops the list of intermediate stops
-             * @param vehicle the vehicle
-             * @param route the route
-             * @param destination the destination
-             * @throws NullPointerException if any parameter is null
-             * @throws IllegalArgumentException if arrTime is before depTime
-             */
-            public Transport {
-                Objects.requireNonNull(depStop);
-                Objects.requireNonNull(depTime);
-                Objects.requireNonNull(arrStop);
-                Objects.requireNonNull(arrTime);
-                Objects.requireNonNull(vehicle);
-                Objects.requireNonNull(route);
-                Objects.requireNonNull(destination);
-                Preconditions.checkArgument(!(arrTime.isBefore(depTime)));
-                intermediateStops = List.copyOf(intermediateStops);
-            }
-        }
-
-        /**
-         * Represents a foot leg of a journey, possibly used for transfers.
-         */
-        record Foot(Stop depStop, LocalDateTime depTime, Stop arrStop, LocalDateTime arrTime) implements Leg {
-            /**
-             * Constructs a Foot leg.
-             *
-             * @param depStop the departure stop
-             * @param depTime the departure time
-             * @param arrStop the arrival stop
-             * @param arrTime the arrival time
-             * @throws NullPointerException if any parameter is null
-             * @throws IllegalArgumentException if arrTime is before depTime
-             */
-            public Foot {
-                Objects.requireNonNull(depStop);
-                Objects.requireNonNull(depTime);
-                Objects.requireNonNull(arrStop);
-                Objects.requireNonNull(arrTime);
-                Preconditions.checkArgument(!(arrTime.isBefore(depTime)));
-            }
-
-            /**
-             * Returns an empty list of intermediate stops for a foot leg.
-             *
-             * @return an empty list of intermediate stops
-             */
-            @Override
-            public List<IntermediateStop> intermediateStops() {
-                return List.of();
-            }
-
-            /**
-             * Checks if the foot leg is a transfer (same station).
-             *
-             * @return true if it is a transfer, false otherwise
-             */
-            public boolean isTransfer() {
-                return depStop.name().equals(arrStop.name());
-            }
-        }
-    }
 
     /**
      * Constructs a Journey.
@@ -221,5 +79,148 @@ public record Journey(List<Leg> legs) {
      */
     public Duration duration() {
         return Duration.between(depTime(), arrTime());
+    }
+
+    /**
+     * A leg of a journey, which can be a foot leg or a transport leg.
+     */
+    public sealed interface Leg {
+        /**
+         * Returns the departure stop of the leg.
+         *
+         * @return the departure stop
+         */
+        Stop depStop();
+
+        /**
+         * Returns the departure time of the leg.
+         *
+         * @return the departure time
+         */
+        LocalDateTime depTime();
+
+        /**
+         * Returns the arrival stop of the leg.
+         *
+         * @return the arrival stop
+         */
+        Stop arrStop();
+
+        /**
+         * Returns the arrival time of the leg.
+         *
+         * @return the arrival time
+         */
+        LocalDateTime arrTime();
+
+        /**
+         * Returns the list of intermediate stops for this leg.
+         *
+         * @return the list of intermediate stops
+         */
+        List<IntermediateStop> intermediateStops();
+
+        /**
+         * Returns the duration of this leg.
+         *
+         * @return the duration of the leg
+         */
+        default Duration duration() {
+            return Duration.between(depTime(), arrTime());
+        }
+
+        /**
+         * Represents an intermediate stop between departure and arrival.
+         */
+        record IntermediateStop(Stop stop, LocalDateTime arrTime, LocalDateTime depTime) {
+            /**
+             * Constructs an IntermediateStop.
+             *
+             * @param stop    the intermediate stop
+             * @param arrTime the arrival time at the stop
+             * @param depTime the departure time at the stop
+             * @throws NullPointerException     if stop, arrTime, or depTime is null
+             * @throws IllegalArgumentException if depTime is before arrTime
+             */
+            public IntermediateStop {
+                Objects.requireNonNull(stop);
+                Preconditions.checkArgument(!(depTime.isBefore(arrTime)));
+            }
+        }
+
+        /**
+         * Represents a transport leg of a journey, specifying vehicle, route, and destination.
+         */
+        record Transport(Stop depStop, LocalDateTime depTime, Stop arrStop, LocalDateTime arrTime,
+                         List<IntermediateStop> intermediateStops, Vehicle vehicle, String route,
+                         String destination) implements Leg {
+            /**
+             * Constructs a Transport leg.
+             *
+             * @param depStop           the departure stop
+             * @param depTime           the departure time
+             * @param arrStop           the arrival stop
+             * @param arrTime           the arrival time
+             * @param intermediateStops the list of intermediate stops
+             * @param vehicle           the vehicle
+             * @param route             the route
+             * @param destination       the destination
+             * @throws NullPointerException     if any parameter is null
+             * @throws IllegalArgumentException if arrTime is before depTime
+             */
+            public Transport {
+                Objects.requireNonNull(depStop);
+                Objects.requireNonNull(depTime);
+                Objects.requireNonNull(arrStop);
+                Objects.requireNonNull(arrTime);
+                Objects.requireNonNull(vehicle);
+                Objects.requireNonNull(route);
+                Objects.requireNonNull(destination);
+                Preconditions.checkArgument(!(arrTime.isBefore(depTime)));
+                intermediateStops = List.copyOf(intermediateStops);
+            }
+        }
+
+        /**
+         * Represents a foot leg of a journey, possibly used for transfers.
+         */
+        record Foot(Stop depStop, LocalDateTime depTime, Stop arrStop, LocalDateTime arrTime) implements Leg {
+            /**
+             * Constructs a Foot leg.
+             *
+             * @param depStop the departure stop
+             * @param depTime the departure time
+             * @param arrStop the arrival stop
+             * @param arrTime the arrival time
+             * @throws NullPointerException     if any parameter is null
+             * @throws IllegalArgumentException if arrTime is before depTime
+             */
+            public Foot {
+                Objects.requireNonNull(depStop);
+                Objects.requireNonNull(depTime);
+                Objects.requireNonNull(arrStop);
+                Objects.requireNonNull(arrTime);
+                Preconditions.checkArgument(!(arrTime.isBefore(depTime)));
+            }
+
+            /**
+             * Returns an empty list of intermediate stops for a foot leg.
+             *
+             * @return an empty list of intermediate stops
+             */
+            @Override
+            public List<IntermediateStop> intermediateStops() {
+                return List.of();
+            }
+
+            /**
+             * Checks if the foot leg is a transfer (same station).
+             *
+             * @return true if it is a transfer, false otherwise
+             */
+            public boolean isTransfer() {
+                return depStop.name().equals(arrStop.name());
+            }
+        }
     }
 }
