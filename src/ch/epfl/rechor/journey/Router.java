@@ -66,8 +66,9 @@ public record Router(TimeTable timeTable) {
             int walkingTime = walkingTimesToDest[arrStationId];
             if (walkingTime >= 0) {
                 int arrivalAtDest = arrTime + walkingTime;
-                // Add tuple (arrival time, 0 changes, connIdx as payload)
-                connFrontier.add(arrivalAtDest, 0, connIdx);
+                // Add tuple with connection ID in high 24 bits and 0 intermediate stops in low 8 bits
+                int payload = encodePayload(connIdx, 0);
+                connFrontier.add(arrivalAtDest, 0, payload);
             }
 
             // Option 2: Continue with the next connection in the trip
@@ -85,8 +86,9 @@ public record Router(TimeTable timeTable) {
                     if (!PackedCriteria.hasDepMins(tuple) || PackedCriteria.depMins(tuple) >= arrTime) {
                         int tupleArrMins = PackedCriteria.arrMins(tuple);
                         int tupleChanges = PackedCriteria.changes(tuple);
-                        // Add tuple with one more change
-                        connFrontier.add(tupleArrMins, tupleChanges + 1, finalConnIdx);
+                        // Add tuple with connection ID in high 24 bits and 0 intermediate stops in low 8 bits
+                        int payload = encodePayload(finalConnIdx, 0);
+                        connFrontier.add(tupleArrMins, tupleChanges + 1, payload);
                     }
                 });
             }
@@ -123,7 +125,7 @@ public record Router(TimeTable timeTable) {
 
             if (!allDominated) {
                 // Update frontiers for all walkable stations
-                updateStationFrontiers(connFrontier, depStationId, depTime, transfers, profileBuilder);
+                updateStationFrontiers(connFrontier, depStationId, depTime, transfers, profileBuilder, connections, connIdx);
             }
         }
 
@@ -160,10 +162,12 @@ public record Router(TimeTable timeTable) {
             int depStationId,
             int depTime,
             Transfers transfers,
-            Profile.Builder profileBuilder) {
+            Profile.Builder profileBuilder,
+            Connections connections,
+            int connIdx) {
 
         // Update the frontier for the departure station
-        updateStationFrontier(connFrontier, depStationId, depTime, profileBuilder);
+        updateStationFrontier(connFrontier, depStationId, depTime, profileBuilder, connections, connIdx);
 
         // Update frontiers for all stations that can walk to the departure station
         for (int stationId = 0; stationId < timeTable.stations().size(); stationId++) {
@@ -174,7 +178,7 @@ public record Router(TimeTable timeTable) {
             try {
                 int walkingTime = transfers.minutesBetween(stationId, depStationId);
                 int adjustedDepTime = depTime - walkingTime;
-                updateStationFrontier(connFrontier, stationId, adjustedDepTime, profileBuilder);
+                updateStationFrontier(connFrontier, stationId, adjustedDepTime, profileBuilder, connections, connIdx);
             } catch (NoSuchElementException e) {
                 // No transfer exists between these stations, skip
             }
@@ -188,7 +192,9 @@ public record Router(TimeTable timeTable) {
             ParetoFront.Builder connFrontier,
             int stationId,
             int depTime,
-            Profile.Builder profileBuilder) {
+            Profile.Builder profileBuilder,
+            Connections connections,
+            int connIdx) {
 
         ParetoFront.Builder stationFrontier = profileBuilder.forStation(stationId);
         if (stationFrontier == null) {
@@ -198,9 +204,60 @@ public record Router(TimeTable timeTable) {
 
         ParetoFront.Builder finalStationFrontier = stationFrontier;
         connFrontier.forEach(tuple -> {
-            // Create a new tuple with departure time and add it to the station frontier
-            long tupleWithDep = PackedCriteria.withDepMins(tuple, depTime);
+            int origPayload = PackedCriteria.payload(tuple);
+            int finalConnId = decodeConnectionId(origPayload);
+
+            // Calculate the number of intermediate stops
+            int intermediateStops = 0;
+            if (connections.tripId(connIdx) == connections.tripId(finalConnId)) {
+                // If same trip, calculate intermediate stops based on positions
+                intermediateStops = connections.tripPos(finalConnId) - connections.tripPos(connIdx);
+            }
+
+            // Create a new payload with current connection ID and intermediate stops
+            int newPayload = encodePayload(connIdx, intermediateStops);
+
+            // Create a new tuple with departure time and new payload
+            long tupleWithNewPayload = PackedCriteria.withPayload(tuple, newPayload);
+            long tupleWithDep = PackedCriteria.withDepMins(tupleWithNewPayload, depTime);
+
             finalStationFrontier.add(tupleWithDep);
         });
+    }
+
+    /**
+     * Encodes the connection ID and intermediate stops count into a single 32-bit payload.
+     *
+     * @param connectionId the ID of the connection (high 24 bits)
+     * @param intermediateStops the number of intermediate stops (low 8 bits)
+     * @return the encoded 32-bit payload
+     */
+    private int encodePayload(int connectionId, int intermediateStops) {
+        // Ensure intermediateStops fits in 8 bits (0-255)
+        if (intermediateStops < 0 || intermediateStops > 255) {
+            throw new IllegalArgumentException("Intermediate stops must be between 0 and 255");
+        }
+        // Combine connection ID (high 24 bits) and intermediate stops (low 8 bits)
+        return (connectionId << 8) | intermediateStops;
+    }
+
+    /**
+     * Extracts the connection ID from the payload.
+     *
+     * @param payload the 32-bit payload
+     * @return the connection ID (high 24 bits)
+     */
+    private int decodeConnectionId(int payload) {
+        return payload >>> 8; // Logical right shift to avoid sign extension
+    }
+
+    /**
+     * Extracts the intermediate stops count from the payload.
+     *
+     * @param payload the 32-bit payload
+     * @return the intermediate stops count (low 8 bits)
+     */
+    private int decodeIntermediateStops(int payload) {
+        return payload & 0xFF;
     }
 }
