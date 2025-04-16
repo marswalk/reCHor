@@ -1,5 +1,6 @@
 package ch.epfl.rechor.journey;
 
+import ch.epfl.rechor.Bits32_24_8;
 import ch.epfl.rechor.timetable.Connections;
 import ch.epfl.rechor.timetable.TimeTable;
 import ch.epfl.rechor.timetable.Transfers;
@@ -31,7 +32,7 @@ public record Router(TimeTable timeTable) {
      * Computes the profile of all optimal journeys from any station to the given destination
      * station on the specified date using the Connection Scan Algorithm (CSA).
      *
-     * @param date the date for which to compute journeys
+     * @param date          the date for which to compute journeys
      * @param destStationId the ID of the destination station
      * @return a profile containing all optimal journeys to the destination
      * @throws NullPointerException if date is null
@@ -232,32 +233,34 @@ public record Router(TimeTable timeTable) {
      * @param intermediateStops the number of intermediate stops (low 8 bits)
      * @return the encoded 32-bit payload
      */
+    /**
+     * Encodes the connection ID and intermediate stops count into a single 32-bit payload.
+     *
+     * @param connectionId      the ID of the connection (24 bits)
+     * @param intermediateStops the number of intermediate stops (8 bits)
+     * @return the encoded 32-bit payload
+     */
     private int encodePayload(int connectionId, int intermediateStops) {
-        // Ensure intermediateStops fits in 8 bits (0-255)
-        if (intermediateStops < 0 || intermediateStops > 255) {
-            throw new IllegalArgumentException("Intermediate stops must be between 0 and 255");
-        }
-        // Combine connection ID (high 24 bits) and intermediate stops (low 8 bits)
-        return (connectionId << 8) | intermediateStops;
+        return Bits32_24_8.pack(connectionId, intermediateStops);
     }
 
     /**
      * Extracts the connection ID from the payload.
      *
      * @param payload the 32-bit payload
-     * @return the connection ID (high 24 bits)
+     * @return the connection ID (24 most significant bits)
      */
     private int decodeConnectionId(int payload) {
-        return payload >>> 8; // Logical right shift to avoid sign extension
+        return Bits32_24_8.unpack24(payload);
     }
 
     /**
      * Extracts the intermediate stops count from the payload.
      *
      * @param payload the 32-bit payload
-     * @return the intermediate stops count (low 8 bits)
+     * @return the intermediate stops count (8 least significant bits)
      */
     private int decodeIntermediateStops(int payload) {
-        return payload & 0xFF;
+        return Bits32_24_8.unpack8(payload);
     }
 }
