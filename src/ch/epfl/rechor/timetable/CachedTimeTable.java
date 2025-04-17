@@ -38,7 +38,7 @@ public class CachedTimeTable implements TimeTable {
     public Trips tripsFor(LocalDate date) {
         Objects.requireNonNull(date);
 
-        if (!date.equals(cachedDate)) {
+        if (!date.equals(cachedDate) || cachedTrips == null) {
             cachedTrips = underlying.tripsFor(date);
             cachedDate = date;
         }
