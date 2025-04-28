@@ -5,12 +5,23 @@ import java.util.Objects;
 
 /**
  * Represents a timetable with cached date-dependent data (connections and trips).
+ * Improves performance by avoiding reloading data when the same date is requested multiple times.
  */
 public class CachedTimeTable implements TimeTable {
     private final TimeTable underlying;
-    private LocalDate cachedDate;
+    
+    // Simple cache for connections and trips
+    private LocalDate cachedConnectionsDate;
     private Connections cachedConnections;
+    
+    private LocalDate cachedTripsDate;
     private Trips cachedTrips;
+    
+    // Statistics counters - simple integers since we only care about general stats
+    private int connectionCacheHits = 0;
+    private int connectionCacheMisses = 0;
+    private int tripCacheHits = 0;
+    private int tripCacheMisses = 0;
 
     /**
      * Constructs a CachedTimeTable with the given underlying timetable.
@@ -19,32 +30,91 @@ public class CachedTimeTable implements TimeTable {
      * @throws NullPointerException if the underlying timetable is null
      */
     public CachedTimeTable(TimeTable underlying) {
-        this.underlying = Objects.requireNonNull(underlying);
+        this.underlying = Objects.requireNonNull(underlying, "Underlying timetable cannot be null");
     }
 
+    /**
+     * Gets connections for the specified date, using the cache if available.
+     * 
+     * @param date the date for which connections are requested
+     * @return connections for the specified date
+     * @throws NullPointerException if date is null
+     */
     @Override
-    public Connections connectionsFor(LocalDate date) {
-        Objects.requireNonNull(date);
+    public synchronized Connections connectionsFor(LocalDate date) {
+        Objects.requireNonNull(date, "Date cannot be null");
 
-        if (!date.equals(cachedDate)) {
-            cachedConnections = underlying.connectionsFor(date);
-            cachedDate = date;
+        // Return cached connections if available for the requested date
+        if (date.equals(cachedConnectionsDate) && cachedConnections != null) {
+            connectionCacheHits++;
+            return cachedConnections;
         }
+
+        // Cache miss - load connections from underlying timetable
+        long startTime = System.currentTimeMillis();
+        cachedConnections = underlying.connectionsFor(date);
+        cachedConnectionsDate = date;
+        connectionCacheMisses++;
+        
+        long duration = System.currentTimeMillis() - startTime;
+        System.out.println("Loaded " + cachedConnections.size() + 
+                         " connections for " + date + " in " + duration + "ms");
 
         return cachedConnections;
     }
 
+    /**
+     * Gets trips for the specified date, using the cache if available.
+     * 
+     * @param date the date for which trips are requested
+     * @return trips for the specified date
+     * @throws NullPointerException if date is null
+     */
     @Override
-    public Trips tripsFor(LocalDate date) {
-        Objects.requireNonNull(date);
+    public synchronized Trips tripsFor(LocalDate date) {
+        Objects.requireNonNull(date, "Date cannot be null");
 
-        if (!date.equals(cachedDate) || cachedTrips == null) {
-            cachedTrips = underlying.tripsFor(date);
-            cachedDate = date;
+        // Return cached trips if available for the requested date
+        if (date.equals(cachedTripsDate) && cachedTrips != null) {
+            tripCacheHits++;
+            return cachedTrips;
         }
+
+        // Cache miss - load trips from underlying timetable
+        long startTime = System.currentTimeMillis();
+        cachedTrips = underlying.tripsFor(date);
+        cachedTripsDate = date;
+        tripCacheMisses++;
+        
+        long duration = System.currentTimeMillis() - startTime;
+        System.out.println("Loaded trips for " + date + " in " + duration + "ms");
 
         return cachedTrips;
     }
+
+    /**
+     * Clears all cached data, forcing a reload on next access.
+     */
+    public synchronized void clearCache() {
+        cachedConnections = null;
+        cachedConnectionsDate = null;
+        cachedTrips = null;
+        cachedTripsDate = null;
+        System.out.println("Cache cleared");
+    }
+
+    /**
+     * Prints cache statistics.
+     */
+    public void printCacheStatistics() {
+        System.out.println("Cache Statistics:");
+        System.out.println("- Connections: " + connectionCacheHits + 
+                          " hits, " + connectionCacheMisses + " misses");
+        System.out.println("- Trips: " + tripCacheHits + 
+                          " hits, " + tripCacheMisses + " misses");
+    }
+
+    // All other methods delegate to the underlying timetable
 
     @Override
     public Stations stations() {

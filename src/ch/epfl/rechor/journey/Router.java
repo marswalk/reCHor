@@ -6,9 +6,7 @@ import ch.epfl.rechor.timetable.TimeTable;
 import ch.epfl.rechor.timetable.Transfers;
 
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Represents an immutable router that computes optimal journey profiles
@@ -17,6 +15,11 @@ import java.util.Objects;
  * @author Your Name
  */
 public record Router(TimeTable timeTable) {
+
+    // Set to false in production for better performance
+    private static final boolean DEBUG = false;
+    // Progress reporting frequency (number of connections between reports)
+    private static final int PROGRESS_REPORT_FREQUENCY = 100000;
 
     /**
      * Constructs a new Router with the given timetable.
@@ -39,21 +42,41 @@ public record Router(TimeTable timeTable) {
      */
     public Profile profile(LocalDate date, int destStationId) {
         Objects.requireNonNull(date, "Date cannot be null");
+        System.out.println("Starting profile calculation for destination: " + destStationId + " on date: " + date);
+        long startTime = System.currentTimeMillis();
 
         // Get connections and transfers for the specified date
         Connections connections = timeTable.connectionsFor(date);
         Transfers transfers = timeTable.transfers();
+
+        System.out.println("Loaded " + connections.size() + " connections");
 
         // Create a profile builder
         Profile.Builder profileBuilder = new Profile.Builder(timeTable, date, destStationId);
 
         // Calculate walking times to destination (or -1 if not walkable)
         int[] walkingTimesToDest = calculateWalkingTimes(destStationId, transfers);
+        System.out.println("Calculated walking times to destination");
+        
+        // PERFORMANCE OPTIMIZATION: Precompute stations that can walk to each station
+        List<int[]> reversedTransfers = precomputeReversedTransfers(transfers);
+        System.out.println("Precomputed reversed transfers");
+
+        // Stats counters
+        int processedConnections = 0;
+        int validFrontiers = 0;
+        int skippedConnections = 0;
 
         // Process connections in decreasing departure time order (increasing index)
         for (int connIdx = 0; connIdx < connections.size(); connIdx++) {
-            // Create a Pareto frontier for this connection
-            ParetoFront.Builder connFrontier = new ParetoFront.Builder();
+            // Progress reporting
+            if (connIdx % PROGRESS_REPORT_FREQUENCY == 0) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                System.out.println("Processing connection: " + connIdx + "/" + connections.size() +
+                    " (" + (connIdx * 100 / connections.size()) + "%) - Time elapsed: " +
+                    (elapsed / 1000) + "s - Speed: " +
+                    (connIdx > 0 ? String.format("%.1f", connIdx / (elapsed / 1000.0)) + " conn/s" : "N/A"));
+            }
 
             // Get connection details
             int arrStopId = connections.arrStopId(connIdx);
@@ -63,23 +86,41 @@ public record Router(TimeTable timeTable) {
             // Convert arrival stop to station if it's a platform
             int arrStationId = timeTable.stationId(arrStopId);
 
-            // Option 1: Walk from arrival to destination
+            // Quick check - if there's no way to continue from this stop, skip
+            ParetoFront.Builder arrStationFrontier = profileBuilder.forStation(arrStationId);
+            ParetoFront.Builder tripFrontier = profileBuilder.forTrip(tripId);
             int walkingTime = walkingTimesToDest[arrStationId];
+
+            // If there's no walking option and no existing frontiers, we can skip
+            if (walkingTime < 0 && tripFrontier == null && arrStationFrontier == null) {
+                skippedConnections++;
+                continue;
+            }
+
+            // Create a Pareto frontier for this connection
+            ParetoFront.Builder connFrontier = new ParetoFront.Builder();
+
+            // Option 1: Walk from arrival to destination
             if (walkingTime >= 0) {
                 int arrivalAtDest = arrTime + walkingTime;
-                // Add tuple with connection ID in high 24 bits and 0 intermediate stops in low 8 bits
                 int payload = encodePayload(connIdx, 0);
                 connFrontier.add(arrivalAtDest, 0, payload);
+
+                if (DEBUG && connIdx % PROGRESS_REPORT_FREQUENCY == 0) {
+                    System.out.println("  Added walking option from station " + arrStationId +
+                        " to destination, arrival: " + arrivalAtDest);
+                }
             }
 
             // Option 2: Continue with the next connection in the trip
-            ParetoFront.Builder tripFrontier = profileBuilder.forTrip(tripId);
             if (tripFrontier != null) {
                 connFrontier.addAll(tripFrontier);
+                if (DEBUG && connIdx % PROGRESS_REPORT_FREQUENCY == 0) {
+                    System.out.println("  Added options from trip " + tripId);
+                }
             }
 
             // Option 3: Change vehicle at the end of this connection
-            ParetoFront.Builder arrStationFrontier = profileBuilder.forStation(arrStationId);
             if (arrStationFrontier != null) {
                 int finalConnIdx = connIdx;
                 arrStationFrontier.forEach(tuple -> {
@@ -87,17 +128,22 @@ public record Router(TimeTable timeTable) {
                     if (!PackedCriteria.hasDepMins(tuple) || PackedCriteria.depMins(tuple) >= arrTime) {
                         int tupleArrMins = PackedCriteria.arrMins(tuple);
                         int tupleChanges = PackedCriteria.changes(tuple);
-                        // Add tuple with connection ID in high 24 bits and 0 intermediate stops in low 8 bits
                         int payload = encodePayload(finalConnIdx, 0);
                         connFrontier.add(tupleArrMins, tupleChanges + 1, payload);
                     }
                 });
+
+                if (DEBUG && connIdx % PROGRESS_REPORT_FREQUENCY == 0) {
+                    System.out.println("  Added options from station change at " + arrStationId);
+                }
             }
 
             // Optimization 1: Skip further processing if frontier is empty
             if (connFrontier.isEmpty()) {
                 continue;
             }
+
+            validFrontiers++;
 
             // Update trip frontier
             if (tripFrontier == null) {
@@ -125,13 +171,72 @@ public record Router(TimeTable timeTable) {
                     depStationFrontier.fullyDominates(connFrontier, depTime);
 
             if (!allDominated) {
-                // Update frontiers for all walkable stations
-                updateStationFrontiers(connFrontier, depStationId, depTime, transfers, profileBuilder, connections, connIdx);
+                // Update frontiers for departure station and walkable stations
+                updateStationFrontiers(connFrontier, depStationId, depTime, transfers, profileBuilder, 
+                                      connections, connIdx, reversedTransfers);
+
+                if (DEBUG && connIdx % PROGRESS_REPORT_FREQUENCY == 0) {
+                    System.out.println("  Updated station frontiers for " + depStationId);
+                }
             }
+
+            processedConnections++;
         }
+
+        long endTime = System.currentTimeMillis();
+        double totalSeconds = (endTime - startTime) / 1000.0;
+        System.out.println("Profile calculation completed in " + String.format("%.2f", totalSeconds) + " seconds");
+        System.out.println("Processed " + processedConnections + " connections, skipped " + skippedConnections +
+                           " connections, with " + validFrontiers + " valid frontiers");
+        System.out.println("Average processing speed: " + String.format("%.1f", connections.size() / totalSeconds) + " connections/second");
 
         // Build and return the profile
         return profileBuilder.build();
+    }
+
+    /**
+     * Precomputes for each station, which other stations can walk to it.
+     * This is the reverse of the transfers graph and helps avoid expensive lookups.
+     * 
+     * @param transfers the transfers data
+     * @return a list where each element at index i is an array of station IDs that can walk to station i
+     */
+    private List<int[]> precomputeReversedTransfers(Transfers transfers) {
+        int stationCount = timeTable.stations().size();
+        Map<Integer, List<Integer>> reversedMap = new HashMap<>();
+        
+        // Initialize the map for each station
+        for (int i = 0; i < stationCount; i++) {
+            reversedMap.put(i, new ArrayList<>());
+        }
+        
+        // Build the reversed transfers map
+        for (int fromId = 0; fromId < stationCount; fromId++) {
+            for (int toId = 0; toId < stationCount; toId++) {
+                if (fromId == toId) continue;
+                
+                try {
+                    // If there's a walking path from fromId to toId, add fromId to toId's list of incoming stations
+                    transfers.minutesBetween(fromId, toId);
+                    reversedMap.get(toId).add(fromId);
+                } catch (NoSuchElementException e) {
+                    // No transfer exists, skip
+                }
+            }
+        }
+        
+        // Convert the map to array format for better performance
+        List<int[]> result = new ArrayList<>(stationCount);
+        for (int i = 0; i < stationCount; i++) {
+            List<Integer> walkableStations = reversedMap.get(i);
+            int[] arr = new int[walkableStations.size()];
+            for (int j = 0; j < walkableStations.size(); j++) {
+                arr[j] = walkableStations.get(j);
+            }
+            result.add(arr);
+        }
+        
+        return result;
     }
 
     /**
@@ -139,11 +244,12 @@ public record Router(TimeTable timeTable) {
      * Returns -1 for stations that are not walkable to the destination.
      */
     private int[] calculateWalkingTimes(int destStationId, Transfers transfers) {
-        int[] walkingTimes = new int[timeTable.stations().size()];
+        int stationCount = timeTable.stations().size();
+        int[] walkingTimes = new int[stationCount];
         Arrays.fill(walkingTimes, -1);
 
         // Find all stations that can walk to the destination
-        for (int stationId = 0; stationId < walkingTimes.length; stationId++) {
+        for (int stationId = 0; stationId < stationCount; stationId++) {
             try {
                 int walkingTime = transfers.minutesBetween(stationId, destStationId);
                 walkingTimes[stationId] = walkingTime;
@@ -156,7 +262,8 @@ public record Router(TimeTable timeTable) {
     }
 
     /**
-     * Updates the frontiers of the departure station and all stations that can walk to it.
+     * Updates the frontiers of the departure station and stations that can walk to it.
+     * OPTIMIZED: Only checks stations that are known to be able to walk to the departure station.
      */
     private void updateStationFrontiers(
             ParetoFront.Builder connFrontier,
@@ -165,23 +272,29 @@ public record Router(TimeTable timeTable) {
             Transfers transfers,
             Profile.Builder profileBuilder,
             Connections connections,
-            int connIdx) {
+            int connIdx,
+            List<int[]> reversedTransfers) {
 
-        // Update the frontier for the departure station
+        // First update the frontier for the departure station itself
         updateStationFrontier(connFrontier, depStationId, depTime, profileBuilder, connections, connIdx);
 
-        // Update frontiers for all stations that can walk to the departure station
-        for (int stationId = 0; stationId < timeTable.stations().size(); stationId++) {
-            if (stationId == depStationId) {
-                continue;
-            }
-
+        // Then update frontiers ONLY for stations that can walk to the departure station
+        int[] stationsThatCanWalkToDep = reversedTransfers.get(depStationId);
+        for (int stationId : stationsThatCanWalkToDep) {
             try {
                 int walkingTime = transfers.minutesBetween(stationId, depStationId);
                 int adjustedDepTime = depTime - walkingTime;
+                
+                // Optimization: Only update if the station already has a frontier
+                ParetoFront.Builder stationFrontier = profileBuilder.forStation(stationId);
+                if (stationFrontier == null) {
+                    stationFrontier = new ParetoFront.Builder();
+                    profileBuilder.setForStation(stationId, stationFrontier);
+                }
+                
                 updateStationFrontier(connFrontier, stationId, adjustedDepTime, profileBuilder, connections, connIdx);
             } catch (NoSuchElementException e) {
-                // No transfer exists between these stations, skip
+                // This shouldn't happen since we precomputed the transfers, but just in case
             }
         }
     }
@@ -204,6 +317,7 @@ public record Router(TimeTable timeTable) {
         }
 
         ParetoFront.Builder finalStationFrontier = stationFrontier;
+
         connFrontier.forEach(tuple -> {
             int origPayload = PackedCriteria.payload(tuple);
             int finalConnId = decodeConnectionId(origPayload);
@@ -226,13 +340,6 @@ public record Router(TimeTable timeTable) {
         });
     }
 
-    /**
-     * Encodes the connection ID and intermediate stops count into a single 32-bit payload.
-     *
-     * @param connectionId the ID of the connection (high 24 bits)
-     * @param intermediateStops the number of intermediate stops (low 8 bits)
-     * @return the encoded 32-bit payload
-     */
     /**
      * Encodes the connection ID and intermediate stops count into a single 32-bit payload.
      *
