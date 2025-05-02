@@ -27,33 +27,31 @@ public final class JourneyIcalConverter {
      * @return the String which is the iCalendar for the Journey
      */
     public static String toIcalendar(Journey journey) {
-        IcalBuilder builder = new IcalBuilder();
-        builder.begin(IcalBuilder.Component.VCALENDAR);
-        builder.add(IcalBuilder.Name.VERSION, "2.0");
-        builder.add(IcalBuilder.Name.PRODID, "ReCHor");
-        builder.begin(IcalBuilder.Component.VEVENT);
-        // example: EEBABA70-83B9-4342-A046-BC949F562DC0 (hyphens are in fixed positions, not characters)
-        // 2^4^32=2^128 hence 32 hex characters  (as 128 bit value represented)
-        builder.add(IcalBuilder.Name.UID, UUID.randomUUID().toString());
-        builder.add(IcalBuilder.Name.DTSTAMP, LocalDateTime.now());
-        builder.add(IcalBuilder.Name.DTSTART, journey.depTime());
-        builder.add(IcalBuilder.Name.DTEND, journey.arrTime());
-        builder.add(IcalBuilder.Name.SUMMARY, journey.depStop().name() + " → " + journey.arrStop().name());
-
-        StringJoiner sj = new StringJoiner("\\n");
+        StringJoiner description = new StringJoiner("\\n");
         for (Journey.Leg leg : journey.legs()) {
             // must use case instead of using the two methods taking different parameters of formatLeg
             // as that way you’d be passing in a Journey.Leg (the interface type).
             // Because method overload resolution in Java is performed at compile time based on the declared type,
             // the compiler wouldn’t know which specific overload to call.
             switch (leg) {
-                case Journey.Leg.Foot f -> sj.add(FormatterFr.formatLeg(f));
-                case Journey.Leg.Transport t -> sj.add(FormatterFr.formatLeg(t));
+                case Journey.Leg.Foot f -> description.add(FormatterFr.formatLeg(f));
+                case Journey.Leg.Transport t -> description.add(FormatterFr.formatLeg(t));
             }
         }
-        builder.add(IcalBuilder.Name.DESCRIPTION, sj.toString());
-        builder.end(); // Closes VEVENT
-        builder.end(); // Closes VCALENDAR
-        return builder.build();
+
+        return new IcalBuilder()
+                .begin(IcalBuilder.Component.VCALENDAR)
+                .add(IcalBuilder.Name.VERSION, "2.0")
+                .add(IcalBuilder.Name.PRODID, "ReCHor")
+                .begin(IcalBuilder.Component.VEVENT)
+                .add(IcalBuilder.Name.UID, UUID.randomUUID().toString())
+                .add(IcalBuilder.Name.DTSTAMP, LocalDateTime.now())
+                .add(IcalBuilder.Name.DTSTART, journey.depTime())
+                .add(IcalBuilder.Name.DTEND, journey.arrTime())
+                .add(IcalBuilder.Name.SUMMARY, journey.depStop().name() + " → " + journey.arrStop().name())
+                .add(IcalBuilder.Name.DESCRIPTION, description.toString())
+                .end() // Ends VEVENT
+                .end() // Ends VCALENDAR
+                .build();
     }
 }
