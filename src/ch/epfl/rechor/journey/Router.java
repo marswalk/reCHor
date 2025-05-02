@@ -1,179 +1,303 @@
 package ch.epfl.rechor.journey;
 
-import ch.epfl.rechor.timetable.*;
+
+import ch.epfl.rechor.Bits32_24_8;
+
+import ch.epfl.rechor.PackedRange;
+
+import ch.epfl.rechor.timetable.Connections;
+
+import ch.epfl.rechor.timetable.TimeTable;
+
+
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+
+
 
 /**
- * Represents a router capable of computing the profile of all optimal journeys
- * from any station to a given destination, for a specific date, using the Connection Scan Algorithm (CSA).
+
+ * Router responsible for calculating optimal profile.
+
  *
- * The Router is immutable and public. Its only attribute is the timetable to use.
- * The main method, {@code profile}, computes the optimal journey profiles to a given destination.
+
+ * This class uses the Pareto front algorithm to calculate optimal
+
+ * travel profiles from a given timetable, taking into account
+
+ * connections, travel times and multiple optimization criteria.
+
  *
- * Debug outputs are printed to System.out at key steps for tracing the algorithm's execution.
- *
- * @author [Your Name]
+
+ * @author Liam Vuilleumier (394026)
+
+ * @author David Asad-Syed (391705)
+
  */
+
 public record Router(TimeTable timeTable) {
 
-    // Configuration for debug output frequency - only print every DEBUG_OUTPUT_INTERVAL connections
-    private static final int DEBUG_OUTPUT_INTERVAL = 1000;
+
 
     /**
-     * Computes the profile of all optimal journeys to the given destination station on the specified date.
-     * Uses the Connection Scan Algorithm (CSA) as described in the project documentation.
+
+     * Computes a travel profile for a given date and destination stop ID.
+
      *
-     * @param date         The date for which to compute optimal journeys.
-     * @param dstStationId The station ID of the destination.
-     * @return The computed journey profile for all stations to the destination.
-     * @throws NullPointerException     if date is null.
-     * @throws IllegalArgumentException if dstStationId is not a valid station.
+
+     * @param date The date for which the profile is computed.
+
+     * @param destinationStopId The ID of the destination stop.
+
+     * @return A Profile object containing the computed travel profile.
+
      */
-    public Profile profile(LocalDate date, int dstStationId) {
-        Objects.requireNonNull(date, "date cannot be null");
-        if (dstStationId < 0 || dstStationId >= timeTable.stations().size())
-            throw new IllegalArgumentException("Invalid destination station ID: " + dstStationId);
 
-        System.out.println("[CSA] Starting profile computation for destination station " + dstStationId + " on " + date);
+    public Profile profile(LocalDate date, int destinationStopId) {
 
-        // Retrieve timetable data for the given date
+        Profile.Builder profile = new Profile.Builder(
+
+                timeTable, date, timeTable.stationId(destinationStopId));
+
+
         Connections connections = timeTable.connectionsFor(date);
-        Trips trips = timeTable.tripsFor(date);
-        Transfers transfers = timeTable.transfers();
 
-        int nStations = timeTable.stations().size();
-        int nTrips = trips.size();
-        int nConnections = connections.size();
+        int[] walkableDistance = getWalkableDistance(destinationStopId);
 
-        // Prepare fast lookup for walking times: -1 if not walkable, else minutes
-        int[] walkToDst = new int[nStations];
-        Arrays.fill(walkToDst, -1);
-        for (int s = 0; s < nStations; ++s) {
-            try {
-                walkToDst[s] = transfers.minutesBetween(s, dstStationId);
-            } catch (NoSuchElementException e) {
-                // Not walkable
-            }
-        }
-        System.out.println("[CSA] Precomputed walking times to destination.");
 
-        // Initialize Pareto front builders for stations and trips
-        ParetoFront.Builder[] stationFronts = new ParetoFront.Builder[nStations];
-        ParetoFront.Builder[] tripFronts = new ParetoFront.Builder[nTrips];
-        for (int i = 0; i < nStations; ++i) stationFronts[i] = new ParetoFront.Builder();
-        for (int i = 0; i < nTrips; ++i) tripFronts[i] = new ParetoFront.Builder();
+// process connecting in descending order.
 
-        System.out.println("[CSA] Processing " + nConnections + " connections...");
+        for (int connectionId = 0; connectionId < connections.size(); connectionId++) {
 
-        // Main CSA scan: connections are sorted by decreasing departure time
-        for (int l = 0; l < nConnections; ++l) {
-            int depStop = connections.depStopId(l);
-            int arrStop = connections.arrStopId(l);
-            int depMins = connections.depMins(l);
-            int arrMins = connections.arrMins(l);
-            int tripId = connections.tripId(l);
-            int tripPos = connections.tripPos(l);
+            ParetoFront.Builder pareto = new ParetoFront.Builder();
 
-            int depStation = timeTable.stationId(depStop);
-            int arrStation = timeTable.stationId(arrStop);
 
-            // Only print debug info at regular intervals or for the first/last connection
-            boolean shouldPrintDebug = l == 0 || l == nConnections - 1 || l % DEBUG_OUTPUT_INTERVAL == 0;
+            int depStopId = connections.depStopId(connectionId);
 
-            if (shouldPrintDebug) {
-                System.out.printf("[CSA] Processing connection %d of %d: depStation=%d, arrStation=%d, depMins=%d, arrMins=%d, tripId=%d, tripPos=%d%n",
-                        l, nConnections, depStation, arrStation, depMins, arrMins, tripId, tripPos);
+            int arrStopId = connections.arrStopId(connectionId);
+
+            int depMins = connections.depMins(connectionId);
+
+            int arrMins = connections.arrMins(connectionId);
+
+            int tripId = connections.tripId(connectionId);
+
+            int depStationId = timeTable.stationId(depStopId);
+
+            int arrStationId = timeTable.stationId(arrStopId);
+
+
+// walk, if possible, from arrival of l to the destination.
+
+            if (walkableDistance[arrStationId] != -1) {
+
+                int payload = Bits32_24_8.pack(connectionId, 0);
+
+                pareto.add(arrMins + walkableDistance[arrStationId], 0, payload);
+
             }
 
-            ParetoFront.Builder f = new ParetoFront.Builder();
 
-            // Option 1: Walk from arrival to destination
-            if (arrStation < nStations && walkToDst[arrStation] >= 0) {
-                int walkDuration = walkToDst[arrStation];
-                int arrivalAtDst = arrMins + walkDuration;
-                f.add(arrivalAtDst, 0, 0); // payload = 0 for now, as base version
+// Continue with the next connection in the same trip.
+
+            ParetoFront.Builder tripFront = profile.forTrip(tripId);
+
+            if (tripFront != null) {
+
+                pareto.addAll(tripFront);
+
             }
 
-            // Option 2: Continue with next connection in same trip
-            f.addAll(tripFronts[tripId]);
 
-            // Option 3: Change vehicle at end of connection
-            ParetoFront.Builder arrStationFront = stationFronts[arrStation];
-            arrStationFront.forEach(tuple -> {
-                int tupleDepMins = PackedCriteria.hasDepMins(tuple) ? PackedCriteria.depMins(tuple) : -1;
-                int tupleArrMins = PackedCriteria.arrMins(tuple);
-                int tupleChanges = PackedCriteria.changes(tuple);
-                if (tupleDepMins == -1 || tupleDepMins >= arrMins) {
-                    long newTuple = PackedCriteria.pack(tupleArrMins, tupleChanges + 1, 0);
-                    f.add(newTuple);
-                }
-            });
+// Change the vehicle at the end of l.
 
-            // Update Pareto front for the trip
-            tripFronts[tripId].addAll(f);
+            ParetoFront.Builder stationBuilder = profile.forStation(arrStationId);
 
-            // Only show trip updates on debug intervals
-            if (shouldPrintDebug && !f.isEmpty()) {
-//                System.out.printf("[CSA]   Updated trip %d Pareto front: %s%n", tripId, tripFronts[tripId]);
+            if (stationBuilder != null) {
+
+                int payload = Bits32_24_8.pack(connectionId, 0);
+
+                stationBuilder.forEach(t -> {
+
+                    if (PackedCriteria.hasDepMins(t) && PackedCriteria.depMins(t) >= arrMins) {
+
+                        pareto.add(PackedCriteria.arrMins(t),
+
+                                PackedCriteria.changes(t) + 1,
+
+                                payload);
+
+                    }
+
+                });
+
             }
 
-            // Update Pareto fronts for all stations from which you can walk to depStation
-            int arrivingTransfers = transfers.arrivingAt(depStation);
-            if (arrivingTransfers != -1) {
-                // Unpack transfer indices (assume packed range: lower 16 bits = start, upper 16 bits = end)
-                int start = arrivingTransfers & 0xFFFF;
-                int end = (arrivingTransfers >>> 16) & 0xFFFF;
-                for (int t = start; t < end; ++t) {
-                    int fromStation = transfers.depStationId(t);
-                    int walkDuration = transfers.minutes(t);
-                    int depTime = depMins - walkDuration;
-                    f.forEach(tuple -> {
-                        long tupleWithDep = PackedCriteria.withDepMins(tuple, depTime);
-                        stationFronts[fromStation].add(tupleWithDep);
 
-                        // Skip detailed transfer debug output to reduce noise
-                    });
-                }
+// If pareto is empty, take the next connection.
+
+            if (pareto.isEmpty()) {
+
+                continue;
+
             }
 
-            // Always update the frontier for the departure station itself (walking time 0)
-            f.forEach(tuple -> {
-                long tupleWithDep = PackedCriteria.withDepMins(tuple, depMins);
-                stationFronts[depStation].add(tupleWithDep);
 
-                // Skip detailed station update debug output to reduce noise
-            });
+// update of the trip of profile.
 
-            // Print progress indicator at regular intervals
-            if (shouldPrintDebug && l > 0 && l < nConnections - 1) {
-                System.out.printf("[CSA] %.1f%% complete (%d/%d connections processed)%n",
-                        (l * 100.0) / nConnections, l, nConnections);
+            profile.setForTrip(tripId, pareto);
+
+
+// Check if we already have a front for this station and if it dominates the current one
+
+            ParetoFront.Builder existingStationFront = profile.forStation(depStationId);
+
+            if (existingStationFront != null && existingStationFront.fullyDominates(pareto, depMins)) {
+
+                continue;
+
             }
+
+
+// update of the station of profile.
+
+            updateStation(depStationId, depMins, profile, connectionId, pareto, connections);
+
         }
 
-        // Build the final Profile object using the station Pareto fronts
-        Profile.Builder builder = new Profile.Builder(timeTable, date, dstStationId);
-        for (int s = 0; s < nStations; ++s) {
-            builder.setForStation(s, stationFronts[s]);
-        }
-        System.out.println("[CSA] Profile computation complete.");
-        return builder.build();
+
+        return profile.build();
+
     }
+
+
 
     /**
-     * Helper to format a packed criteria tuple for debug output.
+
+     * Updates the station profile by considering transfers and adding new tuples to the profile.
+
+     *
+
+     * @param depStationId The departure station ID.
+
+     * @param depmins The departure time in minutes.
+
+     * @param profile The profile builder to update.
+
+     * @param connectionId The ID of the current connection.
+
+     * @param pareto The Pareto front containing optimal tuples.
+
+     * @param connections The connections object containing all connection details.
+
      */
-    private static String tupleToString(long tuple) {
-        StringBuilder sb = new StringBuilder();
-        if (PackedCriteria.hasDepMins(tuple)) {
-            sb.append("dep=").append(PackedCriteria.depMins(tuple)).append(", ");
+
+    private void updateStation(int depStationId, int depmins, Profile.Builder profile,
+
+                               int connectionId, ParetoFront.Builder pareto, Connections connections) {
+
+
+        int transfersRange = timeTable.transfers().arrivingAt(depStationId);
+
+
+        for (int transferIndice = PackedRange.startInclusive(transfersRange);
+
+             transferIndice < PackedRange.endExclusive(transfersRange); transferIndice++) {
+
+
+            int transferDepStationId = timeTable.transfers().depStationId(transferIndice);
+
+            int departureTime = depmins - timeTable.transfers().minutes(transferIndice);
+
+
+            ParetoFront.Builder stationFront = profile.forStation(transferDepStationId);
+
+            if (stationFront == null) {
+
+                stationFront = new ParetoFront.Builder();
+
+                profile.setForStation(transferDepStationId, stationFront);
+
+            }
+
+
+            pareto.forEach(t -> {
+
+// computer the number of intermediate stop.
+
+                int intermediateStops;
+
+                int arrivalConnectionId = Bits32_24_8.unpack24(PackedCriteria.payload(t));
+
+                int departurePos = connections.tripPos(connectionId);
+
+                int arrivalPos = connections.tripPos(arrivalConnectionId);
+
+                intermediateStops = arrivalPos - departurePos;
+
+
+// creation of the new payload
+
+                int newPayload = Bits32_24_8.pack(connectionId, intermediateStops);
+
+
+// add the tuple to the stations of the profile.
+
+                long packedCriteria = PackedCriteria.pack(PackedCriteria.arrMins(t), PackedCriteria.changes(t), newPayload);
+
+                profile.forStation(transferDepStationId).add(PackedCriteria.withDepMins(packedCriteria, departureTime));
+
+            });
+
         }
-        sb.append("arr=").append(PackedCriteria.arrMins(tuple));
-        sb.append(", chg=").append(PackedCriteria.changes(tuple));
-        sb.append(", payload=").append(PackedCriteria.payload(tuple));
-        return sb.toString();
+
     }
+
+
+
+    /**
+
+     * Computes the walkable distances to the destination stop for all stations.
+
+     *
+
+     * @param destinationStopId the ID of the destination stop.
+
+     * @return an array where each index represents a station ID and
+
+     * the value is the walkable distance in minutes.
+
+     */
+
+    private int[] getWalkableDistance(int destinationStopId) {
+
+// initialize the walk distance array for all stations.
+
+        int[] walkableDistance = new int[timeTable.stations().size()];
+
+        for (int i = 0; i < timeTable.stations().size(); i++) {
+
+            walkableDistance[i] = -1; // Default value indicating no walkable distance.
+
+        }
+
+
+// compute the distance to walk to the destination
+
+        int range = timeTable.transfers().arrivingAt(timeTable.stationId(destinationStopId));
+
+        for (int transferIndice = PackedRange.startInclusive(range);
+
+             transferIndice < PackedRange.endExclusive(range);
+
+             transferIndice++) {
+
+
+            walkableDistance[timeTable.transfers().depStationId(transferIndice)] = timeTable.transfers().minutes(transferIndice);
+
+        }
+
+        return walkableDistance;
+
+    }
+
 }
