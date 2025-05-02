@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.List;
 
 public class ArthurRouterTest {
 
@@ -36,9 +37,15 @@ public class ArthurRouterTest {
         int arrStationId = stationId(stations, "Gruyères");
         Router router = new Router(timeTable);
         Profile profile = router.profile(date, arrStationId);
-        Journey journey = JourneyExtractor
-                .journeys(profile, depStationId)
-                .get(32);
+        List<Journey> journeys = JourneyExtractor.journeys(profile, depStationId);
+
+//        System.out.println(journeys); // Print all journeys
+//        for (int i = 0; i < Math.min(60, journeys.size()); i++) {
+//            System.out.println("\n" + i);
+//            Journey journey = journeys.get(i);
+//            System.out.println(JourneyIcalConverter.toIcalendar(journey));
+//        }
+        Journey journey = journeys.get(32);
         System.out.println(JourneyIcalConverter.toIcalendar(journey));
 
         double elapsed = (System.nanoTime() - tStart) * 1e-9;
