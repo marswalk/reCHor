@@ -1,11 +1,7 @@
 package ch.epfl.rechor.journey;
 
-import ch.epfl.rechor.journey.Journey;
-import ch.epfl.rechor.journey.JourneyExtractor;
-import ch.epfl.rechor.journey.JourneyIcalConverter;
-import ch.epfl.rechor.journey.Profile;
-import ch.epfl.rechor.journey.Router;
 import ch.epfl.rechor.timetable.CachedTimeTable;
+import ch.epfl.rechor.timetable.Stations;
 import ch.epfl.rechor.timetable.TimeTable;
 import ch.epfl.rechor.timetable.mapped.FileTimeTable;
 
@@ -14,20 +10,19 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.Month;
 
-/**
- * Test manuel de l'algorithme CSA et de l'export iCalendar.
- * Recherche un trajet direct (sans changements à pied)
- * entre EPFL et Renens VD, le 1er avril 2025.
- */
-public final class ArthurRouterTest {
-    static int stationId(TimeTable tt, String stationName) {
-        var stations = tt.stations();
+public class ArthurRouterTest {
+
+    static int stationId(Stations stations, String stationName) {
+        // … laissé en exercice
+        // Parcourir pour chercher l’index
         for (int i = 0; i < stations.size(); i++) {
             if (stations.name(i).equals(stationName)) {
+                System.out.println("Index trouvé : " + i);
                 return i;
             }
         }
-        throw new IllegalArgumentException("Station introuvable : " + stationName);
+        return -1;
+
     }
 
     public static void main(String[] args) throws IOException {
@@ -35,10 +30,10 @@ public final class ArthurRouterTest {
 
         TimeTable timeTable =
                 new CachedTimeTable(FileTimeTable.in(Path.of("timetable")));
-
-        LocalDate date = LocalDate.of(2025, Month.MARCH, 18);
-        int depStationId = stationId(timeTable, "Ecublens VD, EPFL");
-        int arrStationId = stationId(timeTable, "Gruyères");
+        Stations stations = timeTable.stations();
+        LocalDate date = LocalDate.of(2025, Month.APRIL, 1);
+        int depStationId = stationId(stations, "Ecublens VD, EPFL");
+        int arrStationId = stationId(stations, "Gruyères");
         Router router = new Router(timeTable);
         Profile profile = router.profile(date, arrStationId);
         Journey journey = JourneyExtractor
@@ -50,5 +45,3 @@ public final class ArthurRouterTest {
         System.out.printf("Temps écoulé : %.3f s%n", elapsed);
     }
 }
-
-
