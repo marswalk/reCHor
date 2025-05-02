@@ -47,6 +47,41 @@ public final class PackedCriteria {
     }
 
     /**
+     * Converts minutes since midnight to storage format for arrival time.
+     */
+    private static int minutesToStorage(int minutes) {
+        return minutes + TIME_OFFSET;
+    }
+
+    /**
+     * Converts stored arrival time value back to minutes since midnight.
+     */
+    private static int storageToMinutes(int storedValue) {
+        return storedValue - TIME_OFFSET;
+    }
+
+    /**
+     * Converts minutes since midnight to storage format for departure time.
+     */
+    private static int minutesToDepStorage(int minutes) {
+        return TIME_MAX_VALUE - (minutes + TIME_OFFSET);
+    }
+
+    /**
+     * Converts stored departure time value back to minutes since midnight.
+     */
+    private static int depStorageToMinutes(int storedValue) {
+        return (TIME_MAX_VALUE - storedValue) - TIME_OFFSET;
+    }
+
+    /**
+     * Extracts a field from packed criteria using shift and mask.
+     */
+    private static int extractField(long criteria, int shift, int mask) {
+        return (int) ((criteria >> shift) & mask);
+    }
+
+    /**
      * Packs criteria without a departure time.
      *
      * @param arrMins arrival time in minutes after midnight (must be between -240 and 2880)
@@ -59,8 +94,7 @@ public final class PackedCriteria {
         Preconditions.checkArgument(arrMins >= MIN_MINUTES && arrMins < MAX_MINUTES);
         Preconditions.checkArgument(changes >= MIN_CHANGES && changes < MAX_CHANGES + 1);
 
-        int elapsedTime = arrMins + TIME_OFFSET; // Minutes since 8pm day before
-        long packedArrival = (long) elapsedTime << ARR_TIME_SHIFT;
+        long packedArrival = (long) minutesToStorage(arrMins) << ARR_TIME_SHIFT;
         long packedChanges = (long) changes << CHANGES_SHIFT;
         long packedPayload = Integer.toUnsignedLong(payload);
 
@@ -74,7 +108,7 @@ public final class PackedCriteria {
      * @return true if the criteria has a departure time, false otherwise
      */
     public static boolean hasDepMins(long criteria) {
-        return ((criteria >> DEP_TIME_SHIFT) & TIME_MASK) != 0;
+        return extractField(criteria, DEP_TIME_SHIFT, TIME_MASK) != 0;
     }
 
     /**
@@ -86,8 +120,8 @@ public final class PackedCriteria {
      */
     public static int depMins(long criteria) {
         Preconditions.checkArgument(hasDepMins(criteria));
-        int storedDep = (int) ((criteria >> DEP_TIME_SHIFT) & TIME_MASK);
-        return (TIME_MAX_VALUE - storedDep) - TIME_OFFSET; // Takes (1's(!)) complement and converts to minutes since midnight
+        int storedDep = extractField(criteria, DEP_TIME_SHIFT, TIME_MASK);
+        return depStorageToMinutes(storedDep);
     }
 
     /**
@@ -97,8 +131,8 @@ public final class PackedCriteria {
      * @return the arrival time in minutes after midnight
      */
     public static int arrMins(long criteria) {
-        int storedArr = (int) ((criteria >> ARR_TIME_SHIFT) & TIME_MASK);
-        return storedArr - TIME_OFFSET; // Converts to minutes since midnight
+        int storedArr = extractField(criteria, ARR_TIME_SHIFT, TIME_MASK);
+        return storageToMinutes(storedArr);
     }
 
     /**
@@ -108,7 +142,7 @@ public final class PackedCriteria {
      * @return the number of changes
      */
     public static int changes(long criteria) {
-        return (int) ((criteria >> CHANGES_SHIFT) & CHANGES_MASK);
+        return extractField(criteria, CHANGES_SHIFT, CHANGES_MASK);
     }
 
     /**
@@ -157,8 +191,8 @@ public final class PackedCriteria {
      */
     public static long withDepMins(long criteria, int depMins) {
         Preconditions.checkArgument(depMins >= MIN_MINUTES && depMins < MAX_MINUTES);
-        int storedDep = TIME_MAX_VALUE - (depMins + TIME_OFFSET);
-        return (withoutDepMins(criteria)) | ((long) storedDep << DEP_TIME_SHIFT); // for safety lets clear the depMins first
+        int storedDep = minutesToDepStorage(depMins);
+        return (withoutDepMins(criteria)) | ((long) storedDep << DEP_TIME_SHIFT);
     }
 
     /**
@@ -171,7 +205,7 @@ public final class PackedCriteria {
     public static long withAdditionalChange(long criteria) {
         int changes = changes(criteria);
         if (changes == MAX_CHANGES) throw new IllegalArgumentException("Cannot add more changes to criteria!");
-        return (criteria + (1L << CHANGES_SHIFT)); // Risky if changes = 127 → overflows to 8th bit, hence the check
+        return (criteria + (1L << CHANGES_SHIFT));
     }
 
     /**
