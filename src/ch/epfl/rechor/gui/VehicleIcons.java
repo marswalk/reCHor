@@ -33,14 +33,29 @@ public final class VehicleIcons {
         return ICONS.computeIfAbsent(vehicle, VehicleIcons::loadIcon);
     }
 
+//    private static Image loadIcon(Vehicle vehicle) {
+//        System.out.println("Loading icon for vehicle: " + vehicle);
+//        String resourcePath = "resources/" + vehicle.name() + ".png";
+//        System.out.println("Resource path: " + resourcePath);
+//        InputStream is = VehicleIcons.class.getResourceAsStream(resourcePath);
+//        System.out.println("InputStream: " + is);
+//
+//        if (is == null) {
+//            throw new IllegalArgumentException("Icon not found for vehicle: " + vehicle);
+//        }
+//
+//        return new Image(is);
+//    }
     private static Image loadIcon(Vehicle vehicle) {
-        String resourcePath = "/icons/" + vehicle.name().toLowerCase() + ".png";
-        InputStream is = VehicleIcons.class.getResourceAsStream(resourcePath);
-
-        if (is == null) {
+        System.out.println("Loading icon for vehicle: " + vehicle);
+        try {
+            // Use file URL - specify the path where images are located
+            String path = "file:///C:/Users/T/Documents/GitHub/reCHor/resources/" + vehicle.name() + ".png";
+            System.out.println("Using path: " + path);
+            return new Image(path);
+        } catch (Exception e) {
+            System.err.println("Error loading image: " + e);
             throw new IllegalArgumentException("Icon not found for vehicle: " + vehicle);
         }
-
-        return new Image(is);
     }
 }
