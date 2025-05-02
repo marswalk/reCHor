@@ -13,6 +13,9 @@ import java.util.List;
  */
 public final class IcalBuilder {
 
+    // Static DateTimeFormatter instance for reuse
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+
     private final StringBuilder sb = new StringBuilder();
     private final List<Component> openComponents = new ArrayList<>();
 
@@ -26,10 +29,7 @@ public final class IcalBuilder {
             int charsToTake = firstLine ? Math.min(75, remainingChars) : Math.min(74, remainingChars);
             int endIndex = index + charsToTake;
 
-            // EDIT 3.2: Printing IcalConverter uses \n for each leg
-            // which is interpreted as an actual new line
-            // we changed it to a double \\n to "escape" and print the \n
-            // here then we need to treat "\\n" as 2 char instead of 3 in a line
+            // Handle escaped newlines
             if (endIndex < lineLength - 1 && line.substring(endIndex - 1, endIndex + 1).equals("\\n")) {
                 endIndex--;
             }
@@ -70,9 +70,7 @@ public final class IcalBuilder {
      * @return the event being built
      */
     public IcalBuilder add(Name name, LocalDateTime dateTime) {
-        // this time the hours is 2 digits HH instead of H (noticable when 0h... urgh)
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
-        String formattedDate = dateTime.format(formatter);
+        String formattedDate = dateTime.format(DATE_TIME_FORMATTER);
         add(name, formattedDate);
         return this;
     }
@@ -139,5 +137,4 @@ public final class IcalBuilder {
         SUMMARY, // A brief summary or title of the event
         DESCRIPTION // A detailed description of the event (as per format given using FormatterFr)
     }
-
 }
