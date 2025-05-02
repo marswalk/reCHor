@@ -15,6 +15,9 @@ import java.time.format.DateTimeFormatter;
  */
 public final class FormatterFr {
 
+    // Static DateTimeFormatter instance for reuse
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H'h'mm");
+
     private FormatterFr() {
     }
 
@@ -42,8 +45,7 @@ public final class FormatterFr {
      * @return the formatted date-time string
      */
     public static String formatTime(LocalDateTime dateTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("H'h'mm");
-        return formatter.format(dateTime);
+        return TIME_FORMATTER.format(dateTime);
     }
 
     /**
