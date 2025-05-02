@@ -35,6 +35,9 @@ public final class StopIndex {
         if (query == null || query.isBlank()) {
             return Collections.emptyList();
         }
+        if (maxResults <= 0) {
+            throw new IllegalArgumentException("maxResults must be positive");
+        }
 
         // Split the query into subqueries
         String[] subqueries = query.trim().split("\\s+");
