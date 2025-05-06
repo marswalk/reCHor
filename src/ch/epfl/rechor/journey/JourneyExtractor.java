@@ -46,6 +46,12 @@ public final class JourneyExtractor {
         List<Journey> journeys = new ArrayList<>();
         ParetoFront depStationFront = profile.forStation(depStationId);
 
+        // Debug: front size
+        Stations stations = timeTable.stations();
+        System.out.printf("Debug JourneyExtractor.journeys: depStationId=%d [%s] frontSize=%d, arrStationId=%d [%s]%n",
+            depStationId, stations.name(depStationId), depStationFront.size(),
+            profile.arrStationId(), stations.name(profile.arrStationId()));
+
         depStationFront.forEach((long criteria) -> {
             // Extract journey parameters
             int depMins = PackedCriteria.depMins(criteria);
@@ -53,9 +59,26 @@ public final class JourneyExtractor {
             int changes = PackedCriteria.changes(criteria);
             int payload = PackedCriteria.payload(criteria);
 
+            // Debug each criteria
+            System.out.println("\nDebug JourneyExtractor.criteria: new criteria");
+            System.out.printf("Debug JourneyExtractor.criteria: depMins=%d (%02d:%02d) arrMins=%d (%02d:%02d) changes=%d payload=%d%n",
+                depMins, depMins/60, depMins%60,
+                arrMins, arrMins/60, arrMins%60,
+                changes, payload);
+
             // Extract first connection ID and stops to travel
             int firstConnId = Bits32_24_8.unpack24(payload); // Extract upper 24 bits
-            int stopsToTravel = Bits32_24_8.unpack8(payload); // Extract lower 8 bits\
+            int stopsToTravel = Bits32_24_8.unpack8(payload); // Extract lower 8 bits
+
+            // Debug connection info
+            Connections connections = profile.connections();
+            int connDepStopId = connections.depStopId(firstConnId);
+            int connArrStopId = connections.arrStopId(firstConnId);
+            System.out.printf("Debug JourneyExtractor.connection: firstConnId=%d, stopsToTravel=%d, depStopId=%d [%s], arrStopId=%d [%s]%n",
+                firstConnId, stopsToTravel,
+                connDepStopId, stations.name(timeTable.stationId(connDepStopId)),
+                connArrStopId, stations.name(timeTable.stationId(connArrStopId)));
+
             // stopsToTravel represents the number of intermediate stops for each connection in the journey (right here, it is for the very first connection)
 
             Journey journey = extractJourney(timeTable, date, profile, depStationId,
@@ -68,6 +91,9 @@ public final class JourneyExtractor {
                 .comparing(Journey::depTime)
                 .thenComparing(Journey::arrTime));
 
+        System.out.printf("Debug JourneyExtractor.journeys: Found %d journeys for depStationId=%d [%s]%n",
+            journeys.size(), depStationId, stations.name(depStationId));
+
         return journeys;
     }
 
@@ -79,6 +105,13 @@ public final class JourneyExtractor {
                                           int firstConnId, int stopsToTravel) {
         Connections connections = profile.connections();
         Trips trips = profile.trips();
+        // debug
+        Stations stations = timeTable.stations();
+
+        System.out.printf("Debug extractJourney: start extracting journey from depStationId=%d [%s] to arrStationId=%d [%s], changes=%d%n",
+            depStationId, stations.name(depStationId),
+            profile.arrStationId(), stations.name(profile.arrStationId()),
+            changes);
 
         List<Journey.Leg> legs = new ArrayList<>();
 
@@ -92,6 +125,9 @@ public final class JourneyExtractor {
         int depStopId = connDepStopId;
         int connTripId = connections.tripId(firstConnId);
 
+        System.out.printf("Debug extractJourney: firstConnId=%d depStopId=%d [%s], tripId=%d%n",
+            firstConnId, depStopId, stations.name(timeTable.stationId(depStopId)), connTripId);
+
         // If the journey doesn't start directly from the departure station, add a walking leg
         if (timeTable.stationId(connDepStopId) != depStationId) {
             // Add initial walking leg
@@ -99,7 +135,13 @@ public final class JourneyExtractor {
             Stop connDepStop = createStop(timeTable, connDepStopId);
 
             LocalDateTime depTime = LocalDateTime.of(date, LocalTime.of(depMins / 60, depMins % 60));
-            LocalDateTime WalkToConnDepTime = depTime.plusMinutes(timeTable.transfers().minutesBetween(depStationId, timeTable.stationId(connDepStopId)));
+            int walkMins = timeTable.transfers().minutesBetween(depStationId, timeTable.stationId(connDepStopId));
+            LocalDateTime WalkToConnDepTime = depTime.plusMinutes(walkMins);
+
+            System.out.printf("Debug extractJourney: Adding initial walking leg from stationId=%d [%s] to stationId=%d [%s] (%d mins)%n",
+                depStationId, stations.name(depStationId),
+                timeTable.stationId(connDepStopId), stations.name(timeTable.stationId(connDepStopId)),
+                walkMins);
 
             legs.add(new Journey.Leg.Foot(depStop, depTime, connDepStop, WalkToConnDepTime));
         }
@@ -114,6 +156,12 @@ public final class JourneyExtractor {
             int finalConnectionIndex = findFinalConnectionIndex(connections, connId, stopsToTravel);
             int arrStopId = connections.arrStopId(finalConnectionIndex);
             int arrStationId = timeTable.stationId(arrStopId);
+
+            System.out.printf("Debug extractJourney: Transport leg - connId=%d to finalConnId=%d, from stationId=%d [%s] to stationId=%d [%s], stopsToTravel=%d%n",
+                connId, finalConnectionIndex,
+                timeTable.stationId(depStopId), stations.name(timeTable.stationId(depStopId)),
+                arrStationId, stations.name(arrStationId),
+                stopsToTravel);
 
             // Create transport leg
             List<Journey.Leg.IntermediateStop> intermediateStops = extractIntermediateStops(
@@ -131,6 +179,9 @@ public final class JourneyExtractor {
             String destination = trips.destination(tripId);
             Vehicle vehicle = timeTable.routes().vehicle(trips.routeId(tripId));
 
+            System.out.printf("Debug extractJourney: Adding transport leg - route=%s, destination=%s, vehicle=%s, depTime=%s, arrTime=%s%n",
+                route, destination, vehicle, depTime.toLocalTime(), arrTime.toLocalTime());
+
             legs.add(new Journey.Leg.Transport(
                     depStop, depTime, arrStop, arrTime, intermediateStops, vehicle, route, destination));
 
@@ -141,9 +192,10 @@ public final class JourneyExtractor {
                     // Add final walking leg
                     Stop finalDepStop = arrStop;
                     Stop finalArrStop = createStop(timeTable, profile.arrStationId());
-
-                    LocalDateTime finalArrTime = arrTime.plusMinutes(timeTable.transfers().minutesBetween(arrStationId, profile.arrStationId()));
-
+                    int walkMins = timeTable.transfers().minutesBetween(arrStationId, profile.arrStationId());
+                    LocalDateTime finalArrTime = arrTime.plusMinutes(walkMins);
+                    System.out.println("Debug extractJourney: Adding final walking leg from stationId=" + arrStationId
+                            + " to stationId=" + profile.arrStationId() + " (" + walkMins + " mins)");
                     legs.add(new Journey.Leg.Foot(finalDepStop, arrTime, finalArrStop, finalArrTime));
                 }
                 break;
@@ -162,13 +214,23 @@ public final class JourneyExtractor {
             stopsToTravel = Bits32_24_8.unpack8(nextPayload);
 
             int nextDepStopId = connections.depStopId(nextConnId);
+            int nextConnTripId = connections.tripId(nextConnId);
+
+            System.out.printf("\nDebug extractJourney: Next leg - remainingChanges=%d, nextConnId=%d, stopsToTravel=%d, tripId=%d%n",
+                remainingChanges, nextConnId, stopsToTravel, nextConnTripId);
 
             // Always add a walking leg between the last arrival stop and the next departure stop
             Stop walkDepStop = arrStop;
             Stop walkArrStop = createStop(timeTable, nextDepStopId);
 
             LocalDateTime walkDepTime = arrTime;
-            LocalDateTime walkArrTime = walkDepTime.plusMinutes(timeTable.transfers().minutesBetween(timeTable.stationId(arrStopId), timeTable.stationId(nextDepStopId)));
+            int transferMins = timeTable.transfers().minutesBetween(timeTable.stationId(arrStopId), timeTable.stationId(nextDepStopId));
+            LocalDateTime walkArrTime = walkDepTime.plusMinutes(transferMins);
+
+            System.out.printf("Debug extractJourney: Adding transfer walking leg from stationId=%d [%s] to stationId=%d [%s] (%d mins)%n",
+                timeTable.stationId(arrStopId), stations.name(timeTable.stationId(arrStopId)),
+                timeTable.stationId(nextDepStopId), stations.name(timeTable.stationId(nextDepStopId)),
+                transferMins);
 
             legs.add(new Journey.Leg.Foot(walkDepStop, walkDepTime, walkArrStop, walkArrTime));
 
@@ -213,6 +275,13 @@ public final class JourneyExtractor {
     private static List<Journey.Leg.IntermediateStop> extractIntermediateStops(
             TimeTable timeTable, LocalDate date, Connections connections, int startConnId, int stopsToTravel) {
 
+        // Debug start of extraction
+        Stations stations = timeTable.stations();
+        System.out.printf("Debug extractIntermediateStops: startConnId=%d, stopsToTravel=%d, depStopId=%d [%s], arrStopId=%d [%s]%n",
+            startConnId, stopsToTravel,
+            connections.depStopId(startConnId), stations.name(timeTable.stationId(connections.depStopId(startConnId))),
+            connections.arrStopId(startConnId), stations.name(timeTable.stationId(connections.arrStopId(startConnId))));
+
         List<Journey.Leg.IntermediateStop> intermediateStops = new ArrayList<>();
         int currentConnId = startConnId;
 
@@ -222,6 +291,22 @@ public final class JourneyExtractor {
 
             // Create intermediate stop data
             int arrStopId = connections.arrStopId(currentConnId);
+            int depStopId = connections.depStopId(nextConnId);
+
+            //debug
+            int arrMins = connections.arrMins(currentConnId);
+            int depMinsNext = connections.depMins(nextConnId);
+            // Debug each intermediate stop timing
+            System.out.printf(
+                "Debug IntermediateStop %d: connId=%d, arrStopId=%d [%s], arrMins=%d (%02d:%02d), nextConnId=%d, depStopId=%d [%s], depMins=%d (%02d:%02d)%n",
+                i,
+                currentConnId,
+                arrStopId, stations.name(timeTable.stationId(arrStopId)),
+                arrMins, arrMins/60, arrMins%60,
+                nextConnId,
+                depStopId, stations.name(timeTable.stationId(depStopId)),
+                depMinsNext, depMinsNext/60, depMinsNext%60
+            );
 
             Stop stop = createStop(timeTable, arrStopId);
 
@@ -235,6 +320,7 @@ public final class JourneyExtractor {
             currentConnId = nextConnId;
         }
 
+        System.out.printf("Debug extractIntermediateStops: Extracted %d intermediate stops%n", intermediateStops.size());
         return intermediateStops;
     }
 }
