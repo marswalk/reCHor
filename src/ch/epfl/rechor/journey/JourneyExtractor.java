@@ -134,7 +134,7 @@ public final class JourneyExtractor {
             Stop depStop = createStop(timeTable, depStationId);
             Stop connDepStop = createStop(timeTable, connDepStopId);
 
-            LocalDateTime depTime = LocalDateTime.of(date, LocalTime.of(depMins / 60, depMins % 60));
+            LocalDateTime depTime = minsToDateTime(date, depMins);
             int walkMins = timeTable.transfers().minutesBetween(depStationId, timeTable.stationId(connDepStopId));
             LocalDateTime WalkToConnDepTime = depTime.plusMinutes(walkMins);
 
@@ -170,10 +170,8 @@ public final class JourneyExtractor {
             Stop depStop = createStop(timeTable, depStopId);
             Stop arrStop = createStop(timeTable, arrStopId);
 
-            LocalDateTime depTime = LocalDateTime.of(date,
-                    LocalTime.of(connections.depMins(connId) / 60, connections.depMins(connId) % 60));
-            LocalDateTime arrTime = LocalDateTime.of(date,
-                    LocalTime.of(connections.arrMins(finalConnectionIndex) / 60, connections.arrMins(finalConnectionIndex) % 60));
+            LocalDateTime depTime = minsToDateTime(date, connections.depMins(connId));
+            LocalDateTime arrTime = minsToDateTime(date, connections.arrMins(finalConnectionIndex));
 
             String route = timeTable.routes().name(trips.routeId(tripId));
             String destination = trips.destination(tripId);
@@ -259,6 +257,21 @@ public final class JourneyExtractor {
     }
 
     /**
+     * Converts minutes since start of day to LocalDateTime, handling day transitions.
+     * @param baseDate The base date
+     * @param mins Minutes since start of day
+     * @return LocalDateTime with appropriate date and time
+     */
+    private static LocalDateTime minsToDateTime(LocalDate baseDate, int mins) {
+        int days = mins / (24 * 60);       // Number of complete days
+        int remainingMins = mins % (24 * 60); // Remaining minutes in the day
+        int hours = remainingMins / 60;
+        int minutes = remainingMins % 60;
+
+        return LocalDateTime.of(baseDate.plusDays(days), LocalTime.of(hours, minutes));
+    }
+
+    /**
      * Finds the index of the final connection (i.e. after traveling a specified number of stops).
      */
     private static int findFinalConnectionIndex(Connections connections, int startConnId, int stopsToTravel) {
@@ -310,10 +323,8 @@ public final class JourneyExtractor {
 
             Stop stop = createStop(timeTable, arrStopId);
 
-            LocalDateTime arrTime = LocalDateTime.of(date,
-                    LocalTime.of(connections.arrMins(currentConnId) / 60, connections.arrMins(currentConnId) % 60));
-            LocalDateTime depTime = LocalDateTime.of(date,
-                    LocalTime.of(connections.depMins(nextConnId) / 60, connections.depMins(nextConnId) % 60));
+            LocalDateTime arrTime = minsToDateTime(date, connections.arrMins(currentConnId));
+            LocalDateTime depTime = minsToDateTime(date, connections.depMins(nextConnId));
 
             intermediateStops.add(new Journey.Leg.IntermediateStop(stop, arrTime, depTime));
 
