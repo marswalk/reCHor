@@ -150,12 +150,8 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
      * Updates the search results list based on the current query.
      */
     private static void updateSearchResults(String query, StopIndex stopIndex, ListView<String> resultList) {
-        if (query == null || query.isBlank()) {
-            resultList.getItems().clear();
-            return;
-        }
-
-        // Search for stops and update the list
+        // Always search for stops and update the list, even when query is blank
+        // This will return alphabetically sorted stops when query is blank
         List<String> matchingStops = stopIndex.stopsMatching(query, 30);
         resultList.getItems().setAll(matchingStops);
 

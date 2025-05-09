@@ -32,11 +32,16 @@ public final class StopIndex {
      * @return a list of stop names matching the query, sorted by decreasing relevance score
      */
     public List<String> stopsMatching(String query, int maxResults) {
-        if (query == null || query.isBlank()) {
-            return Collections.emptyList();
-        }
         if (maxResults <= 0) {
             throw new IllegalArgumentException("maxResults must be positive");
+        }
+
+        // If query is blank, return all stop names in alphabetical order
+        if (query == null || query.isBlank()) {
+            return stopNames.stream()
+                .sorted()
+                .limit(maxResults)
+                .collect(Collectors.toList());
         }
 
         // Split the query into subqueries
