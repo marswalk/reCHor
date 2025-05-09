@@ -35,8 +35,6 @@ import java.util.Map;
  * @param rootNode the root node
  * @param selectedJourneyO the selected journey
  * 
- * @param journeysO the observable list of journeys
- * @param depTimeO  the observable departure time
  * @return a new SummaryUI instance
  * 
  * @author Guanting Wen (392412)
