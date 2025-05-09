@@ -31,22 +31,21 @@ import java.util.Map;
 
 /**
  * UI component displaying a visual summary of journeys with their timings and transfers.
- *
+ * 
+ * @param rootNode the root node
+ * @param selectedJourneyO the selected journey
+ * 
+ * @param journeysO the observable list of journeys
+ * @param depTimeO  the observable departure time
+ * @return a new SummaryUI instance
+ * 
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
  */
-public final class SummaryUI {
-    private final Node rootNode;
-    private final ObservableValue<Journey> selectedJourneyO;
-
+public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO) {
     private static final int ICON_SIZE = 20;
     private static final int LINE_MARGIN = 5;
     private static final int CIRCLE_RADIUS = 3;
-
-    private SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO) {
-        this.rootNode = rootNode;
-        this.selectedJourneyO = selectedJourneyO;
-    }
 
     /**
      * Creates a new SummaryUI with the given journey list and departure time.
