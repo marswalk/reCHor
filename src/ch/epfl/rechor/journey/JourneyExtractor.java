@@ -24,8 +24,34 @@ import java.util.List;
  */
 public final class JourneyExtractor {
 
+    // Toggle debug output with this flag
+    private static final boolean DEBUG = false;
+
     // Private constructor to prevent instantiation
     private JourneyExtractor() {
+    }
+
+    /**
+     * Print debug message only if debugging is enabled.
+     *
+     * @param message the debug message to print
+     */
+    private static void debug(String message) {
+        if (DEBUG) {
+            System.out.println(message);
+        }
+    }
+
+    /**
+     * Print formatted debug message only if debugging is enabled.
+     *
+     * @param format the format string
+     * @param args the arguments referenced by the format specifiers
+     */
+    private static void debugf(String format, Object... args) {
+        if (DEBUG) {
+            System.out.printf(format, args);
+        }
     }
 
     /**
@@ -48,7 +74,7 @@ public final class JourneyExtractor {
 
         // Debug: front size
         Stations stations = timeTable.stations();
-        System.out.printf("Debug JourneyExtractor.journeys: depStationId=%d [%s] frontSize=%d, arrStationId=%d [%s]%n",
+        debugf("Debug JourneyExtractor.journeys: depStationId=%d [%s] frontSize=%d, arrStationId=%d [%s]%n",
             depStationId, stations.name(depStationId), depStationFront.size(),
             profile.arrStationId(), stations.name(profile.arrStationId()));
 
@@ -60,8 +86,8 @@ public final class JourneyExtractor {
             int payload = PackedCriteria.payload(criteria);
 
             // Debug each criteria
-            System.out.println("\nDebug JourneyExtractor.criteria: new criteria");
-            System.out.printf("Debug JourneyExtractor.criteria: depMins=%d (%02d:%02d) arrMins=%d (%02d:%02d) changes=%d payload=%d%n",
+            debug("\nDebug JourneyExtractor.criteria: new criteria");
+            debugf("Debug JourneyExtractor.criteria: depMins=%d (%02d:%02d) arrMins=%d (%02d:%02d) changes=%d payload=%d%n",
                 depMins, depMins/60, depMins%60,
                 arrMins, arrMins/60, arrMins%60,
                 changes, payload);
@@ -74,7 +100,7 @@ public final class JourneyExtractor {
             Connections connections = profile.connections();
             int connDepStopId = connections.depStopId(firstConnId);
             int connArrStopId = connections.arrStopId(firstConnId);
-            System.out.printf("Debug JourneyExtractor.connection: firstConnId=%d, stopsToTravel=%d, depStopId=%d [%s], arrStopId=%d [%s]%n",
+            debugf("Debug JourneyExtractor.connection: firstConnId=%d, stopsToTravel=%d, depStopId=%d [%s], arrStopId=%d [%s]%n",
                 firstConnId, stopsToTravel,
                 connDepStopId, stations.name(timeTable.stationId(connDepStopId)),
                 connArrStopId, stations.name(timeTable.stationId(connArrStopId)));
@@ -91,7 +117,7 @@ public final class JourneyExtractor {
                 .comparing(Journey::depTime)
                 .thenComparing(Journey::arrTime));
 
-        System.out.printf("Debug JourneyExtractor.journeys: Found %d journeys for depStationId=%d [%s]%n",
+        debugf("Debug JourneyExtractor.journeys: Found %d journeys for depStationId=%d [%s]%n",
             journeys.size(), depStationId, stations.name(depStationId));
 
         return journeys;
@@ -108,7 +134,7 @@ public final class JourneyExtractor {
         // debug
         Stations stations = timeTable.stations();
 
-        System.out.printf("Debug extractJourney: start extracting journey from depStationId=%d [%s] to arrStationId=%d [%s], changes=%d%n",
+        debugf("Debug extractJourney: start extracting journey from depStationId=%d [%s] to arrStationId=%d [%s], changes=%d%n",
             depStationId, stations.name(depStationId),
             profile.arrStationId(), stations.name(profile.arrStationId()),
             changes);
@@ -125,7 +151,7 @@ public final class JourneyExtractor {
         int depStopId = connDepStopId;
         int connTripId = connections.tripId(firstConnId);
 
-        System.out.printf("Debug extractJourney: firstConnId=%d depStopId=%d [%s], tripId=%d%n",
+        debugf("Debug extractJourney: firstConnId=%d depStopId=%d [%s], tripId=%d%n",
             firstConnId, depStopId, stations.name(timeTable.stationId(depStopId)), connTripId);
 
         // If the journey doesn't start directly from the departure station, add a walking leg
@@ -138,7 +164,7 @@ public final class JourneyExtractor {
             int walkMins = timeTable.transfers().minutesBetween(depStationId, timeTable.stationId(connDepStopId));
             LocalDateTime WalkToConnDepTime = depTime.plusMinutes(walkMins);
 
-            System.out.printf("Debug extractJourney: Adding initial walking leg from stationId=%d [%s] to stationId=%d [%s] (%d mins)%n",
+            debugf("Debug extractJourney: Adding initial walking leg from stationId=%d [%s] to stationId=%d [%s] (%d mins)%n",
                 depStationId, stations.name(depStationId),
                 timeTable.stationId(connDepStopId), stations.name(timeTable.stationId(connDepStopId)),
                 walkMins);
@@ -157,7 +183,7 @@ public final class JourneyExtractor {
             int arrStopId = connections.arrStopId(finalConnectionIndex);
             int arrStationId = timeTable.stationId(arrStopId);
 
-            System.out.printf("Debug extractJourney: Transport leg - connId=%d to finalConnId=%d, from stationId=%d [%s] to stationId=%d [%s], stopsToTravel=%d%n",
+            debugf("Debug extractJourney: Transport leg - connId=%d to finalConnId=%d, from stationId=%d [%s] to stationId=%d [%s], stopsToTravel=%d%n",
                 connId, finalConnectionIndex,
                 timeTable.stationId(depStopId), stations.name(timeTable.stationId(depStopId)),
                 arrStationId, stations.name(arrStationId),
@@ -177,7 +203,7 @@ public final class JourneyExtractor {
             String destination = trips.destination(tripId);
             Vehicle vehicle = timeTable.routes().vehicle(trips.routeId(tripId));
 
-            System.out.printf("Debug extractJourney: Adding transport leg - route=%s, destination=%s, vehicle=%s, depTime=%s, arrTime=%s%n",
+            debugf("Debug extractJourney: Adding transport leg - route=%s, destination=%s, vehicle=%s, depTime=%s, arrTime=%s%n",
                 route, destination, vehicle, depTime.toLocalTime(), arrTime.toLocalTime());
 
             legs.add(new Journey.Leg.Transport(
@@ -192,8 +218,8 @@ public final class JourneyExtractor {
                     Stop finalArrStop = createStop(timeTable, profile.arrStationId());
                     int walkMins = timeTable.transfers().minutesBetween(arrStationId, profile.arrStationId());
                     LocalDateTime finalArrTime = arrTime.plusMinutes(walkMins);
-                    System.out.println("Debug extractJourney: Adding final walking leg from stationId=" + arrStationId
-                            + " to stationId=" + profile.arrStationId() + " (" + walkMins + " mins)");
+                    debugf("Debug extractJourney: Adding final walking leg from stationId=%d to stationId=%d (%d mins)%n",
+                        arrStationId, profile.arrStationId(), walkMins);
                     legs.add(new Journey.Leg.Foot(finalDepStop, arrTime, finalArrStop, finalArrTime));
                 }
                 break;
@@ -214,7 +240,7 @@ public final class JourneyExtractor {
             int nextDepStopId = connections.depStopId(nextConnId);
             int nextConnTripId = connections.tripId(nextConnId);
 
-            System.out.printf("\nDebug extractJourney: Next leg - remainingChanges=%d, nextConnId=%d, stopsToTravel=%d, tripId=%d%n",
+            debugf("\nDebug extractJourney: Next leg - remainingChanges=%d, nextConnId=%d, stopsToTravel=%d, tripId=%d%n",
                 remainingChanges, nextConnId, stopsToTravel, nextConnTripId);
 
             // Always add a walking leg between the last arrival stop and the next departure stop
@@ -225,7 +251,7 @@ public final class JourneyExtractor {
             int transferMins = timeTable.transfers().minutesBetween(timeTable.stationId(arrStopId), timeTable.stationId(nextDepStopId));
             LocalDateTime walkArrTime = walkDepTime.plusMinutes(transferMins);
 
-            System.out.printf("Debug extractJourney: Adding transfer walking leg from stationId=%d [%s] to stationId=%d [%s] (%d mins)%n",
+            debugf("Debug extractJourney: Adding transfer walking leg from stationId=%d [%s] to stationId=%d [%s] (%d mins)%n",
                 timeTable.stationId(arrStopId), stations.name(timeTable.stationId(arrStopId)),
                 timeTable.stationId(nextDepStopId), stations.name(timeTable.stationId(nextDepStopId)),
                 transferMins);
@@ -290,7 +316,7 @@ public final class JourneyExtractor {
 
         // Debug start of extraction
         Stations stations = timeTable.stations();
-        System.out.printf("Debug extractIntermediateStops: startConnId=%d, stopsToTravel=%d, depStopId=%d [%s], arrStopId=%d [%s]%n",
+        debugf("Debug extractIntermediateStops: startConnId=%d, stopsToTravel=%d, depStopId=%d [%s], arrStopId=%d [%s]%n",
             startConnId, stopsToTravel,
             connections.depStopId(startConnId), stations.name(timeTable.stationId(connections.depStopId(startConnId))),
             connections.arrStopId(startConnId), stations.name(timeTable.stationId(connections.arrStopId(startConnId))));
@@ -310,7 +336,7 @@ public final class JourneyExtractor {
             int arrMins = connections.arrMins(currentConnId);
             int depMinsNext = connections.depMins(nextConnId);
             // Debug each intermediate stop timing
-            System.out.printf(
+            debugf(
                 "Debug IntermediateStop %d: connId=%d, arrStopId=%d [%s], arrMins=%d (%02d:%02d), nextConnId=%d, depStopId=%d [%s], depMins=%d (%02d:%02d)%n",
                 i,
                 currentConnId,
@@ -331,7 +357,7 @@ public final class JourneyExtractor {
             currentConnId = nextConnId;
         }
 
-        System.out.printf("Debug extractIntermediateStops: Extracted %d intermediate stops%n", intermediateStops.size());
+        debugf("Debug extractIntermediateStops: Extracted %d intermediate stops%n", intermediateStops.size());
         return intermediateStops;
     }
 }
