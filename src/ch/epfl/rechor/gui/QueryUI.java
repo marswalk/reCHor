@@ -73,6 +73,14 @@ public record QueryUI(
             String arr = arrivalField.textField().getText();
             departureField.setTo(arr);
             arrivalField.setTo(dep);
+
+            // Force focus on one of the fields to trigger a search
+            if (!dep.isEmpty() || !arr.isEmpty()) {
+                // Request focus on departure field to trigger search
+                departureField.textField().requestFocus();
+                // Then immediately request focus on parent to simulate a complete focus cycle
+                root.requestFocus();
+            }
         });
 
         // First row with departure and arrival stops

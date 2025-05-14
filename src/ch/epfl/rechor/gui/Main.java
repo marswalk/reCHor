@@ -57,7 +57,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         try {
             // Load timetable data
-            timeTable = FileTimeTable.in(Path.of("timetable/timetable_18"));
+            timeTable = FileTimeTable.in(Path.of("timetable/timetable_19"));
             router = new Router(timeTable);
 
             // Create stop index for search functionality

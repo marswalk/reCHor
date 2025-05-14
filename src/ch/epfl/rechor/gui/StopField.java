@@ -83,33 +83,19 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
                 }
             }
         });
+        
+        // Add a mouse click handler to show popup even if already focused
+        textField.setOnMouseClicked(e -> {
+            if (textField.isFocused()) {
+                showPopup(textField, stopIndex, resultList, popup);
+            }
+        });
 
         // Track focus state and handle search functionality
         textField.focusedProperty().addListener((obs, oldVal, isFocused) -> {
             if (isFocused) {
                 // Text field gained focus - show popup and search
-                updateSearchResults(textField.getText(), stopIndex, resultList);
-
-                // Position popup under the text field
-                Node textFieldNode = textField;
-                popup.setAnchorX(textFieldNode.localToScreen(textFieldNode.getBoundsInLocal()).getMinX());
-                popup.setAnchorY(textFieldNode.localToScreen(textFieldNode.getBoundsInLocal()).getMaxY());
-                popup.show(textField.getScene().getWindow());
-
-                // Listen for changes in the search text
-                textField.textProperty().addListener((observable, oldText, newText) -> {
-                    updateSearchResults(newText, stopIndex, resultList);
-                });
-
-                // Listen for changes in the position of the field (for positioning the popup)
-                textField.boundsInLocalProperty().addListener((observable, oldBounds, newBounds) -> {
-                    if (popup.isShowing()) {
-                        Node node = textField;
-                        popup.setAnchorX(node.localToScreen(node.getBoundsInLocal()).getMinX());
-                        popup.setAnchorY(node.localToScreen(node.getBoundsInLocal()).getMaxY());
-                    }
-                });
-
+                showPopup(textField, stopIndex, resultList, popup);
             } else {
                 // Text field lost focus - process selection and hide popup
                 popup.hide();
@@ -131,6 +117,33 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
         });
 
         return new StopField(textField, selectedStopProperty);
+    }
+
+    /**
+     * Helper method to show popup and update search results
+     */
+    private static void showPopup(TextField textField, StopIndex stopIndex, ListView<String> resultList, Popup popup) {
+        updateSearchResults(textField.getText(), stopIndex, resultList);
+
+        // Position popup under the text field
+        Node textFieldNode = textField;
+        popup.setAnchorX(textFieldNode.localToScreen(textFieldNode.getBoundsInLocal()).getMinX());
+        popup.setAnchorY(textFieldNode.localToScreen(textFieldNode.getBoundsInLocal()).getMaxY());
+        popup.show(textField.getScene().getWindow());
+
+        // Listen for changes in the search text
+        textField.textProperty().addListener((observable, oldText, newText) -> {
+            updateSearchResults(newText, stopIndex, resultList);
+        });
+
+        // Listen for changes in the position of the field (for positioning the popup)
+        textField.boundsInLocalProperty().addListener((observable, oldBounds, newBounds) -> {
+            if (popup.isShowing()) {
+                Node node = textField;
+                popup.setAnchorX(node.localToScreen(node.getBoundsInLocal()).getMinX());
+                popup.setAnchorY(node.localToScreen(node.getBoundsInLocal()).getMaxY());
+            }
+        });
     }
 
     /**
