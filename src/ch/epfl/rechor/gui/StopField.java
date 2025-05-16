@@ -92,7 +92,7 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
         });
 
         // Track focus state and handle search functionality
-        textField.focusedProperty().addListener((obs, oldVal, isFocused) -> {
+        textField.focusedProperty().subscribe((isFocused) -> {
             if (isFocused) {
                 // Text field gained focus - show popup and search
                 showPopup(textField, stopIndex, resultList, popup);
@@ -132,12 +132,12 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
         popup.show(textField.getScene().getWindow());
 
         // Listen for changes in the search text
-        textField.textProperty().addListener((observable, oldText, newText) -> {
+        textField.textProperty().subscribe((newText) -> {
             updateSearchResults(newText, stopIndex, resultList);
         });
 
         // Listen for changes in the position of the field (for positioning the popup)
-        textField.boundsInLocalProperty().addListener((observable, oldBounds, newBounds) -> {
+        textField.boundsInLocalProperty().subscribe((newBounds) -> {
             if (popup.isShowing()) {
                 Node node = textField;
                 popup.setAnchorX(node.localToScreen(node.getBoundsInLocal()).getMinX());
