@@ -98,7 +98,7 @@ public record DetailUI(Node rootNode) {
         stackPane.getChildren().add(journeyBox);
 
         // Update UI when journey changes
-        journeyObservable.addSubscriber((observable, oldJourney, newJourney) -> {
+        journeyObservable.addListener((observable, oldJourney, newJourney) -> {
             if (newJourney == null) {
                 noJourneyBox.setVisible(true);
                 journeyBox.setVisible(false);

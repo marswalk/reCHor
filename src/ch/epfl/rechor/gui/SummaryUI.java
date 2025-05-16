@@ -58,7 +58,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
         journeyListView.setCellFactory(param -> new JourneyCell());
 
         // Bind the journey list to the list view
-        journeysO.addSubscriber((o, oldJourneys, newJourneys) -> {
+        journeysO.addListener((o, oldJourneys, newJourneys) -> {
             journeyListView.getItems().setAll(newJourneys);
 
             // Select appropriate journey based on departure time
@@ -69,7 +69,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
         });
 
         // When departure time changes, select the appropriate journey
-        depTimeO.addSubscriber((o, oldTime, newTime) -> {
+        depTimeO.addListener((o, oldTime, newTime) -> {
             List<Journey> journeys = journeysO.getValue();
             if (journeys != null && !journeys.isEmpty()) {
                 selectJourneyByDepartureTime(journeyListView, journeys, newTime);
@@ -86,7 +86,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
 
         // Create observable value for selected journey
         ObjectProperty<Journey> selectedJourneyProperty = new SimpleObjectProperty<>();
-        journeyListView.getSelectionModel().selectedItemProperty().addSubscriber(
+        journeyListView.getSelectionModel().selectedItemProperty().addListener(
                 (o, oldJourney, newJourney) -> selectedJourneyProperty.set(newJourney));
 
         return new SummaryUI(journeyListView, selectedJourneyProperty);
