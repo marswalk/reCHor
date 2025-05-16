@@ -147,15 +147,18 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
     }
 
     /**
-     * Sets the text field to display the given stop name.
+     * Sets the text field to display the given stop name and updates the observable stop property.
      *
      * @param stopName the stop name to display
      */
     public void setTo(String stopName) {
-        if (stopName == null) {
-            textField.setText("");
-        } else {
-            textField.setText(stopName);
+        String newText = (stopName == null) ? "" : stopName;
+        textField.setText(newText);
+
+        // Directly update the observable property 'stopO'
+        // 'stopO' is the SimpleStringProperty instance from the create() method
+        if (this.stopO instanceof StringProperty property) {
+            property.set(newText);
         }
     }
 
