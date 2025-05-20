@@ -45,16 +45,8 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
         resultList.setMaxHeight(240);
         popup.getContent().add(resultList);
         popup.setHideOnEscape(false);
-        popup.setAutoHide(true);
-
-        // When user selects an item from the list
-        resultList.setOnMouseClicked(e -> {
-            String selectedItem = resultList.getSelectionModel().getSelectedItem();
-            if (selectedItem != null) {
-                textField.setText(selectedItem);
-                textField.getParent().requestFocus(); // Make field inactive
-            }
-        });
+        // Don't auto-hide, we'll manage visibility based on focus
+        popup.setAutoHide(false);
 
         // Handle keyboard navigation in the results list
         textField.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
@@ -73,40 +65,54 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
                         resultList.scrollTo(currentIndex - 1);
                         event.consume();
                     }
-                } else if (event.getCode() == KeyCode.ENTER) {
+                } else if (event.getCode() == KeyCode.TAB) {
+                    // Tab key selects the currently highlighted item and hides the popup
                     String selectedItem = resultList.getSelectionModel().getSelectedItem();
                     if (selectedItem != null) {
                         textField.setText(selectedItem);
-                        textField.getParent().requestFocus(); // Make field inactive
-                        event.consume();
+                        selectedStopProperty.set(selectedItem);
+                        popup.hide();
+                        // Don't consume the event so the focus moves to the next field
                     }
                 }
             }
         });
-        
-        // Add a mouse click handler to show popup even if already focused
-        textField.setOnMouseClicked(e -> {
-            if (textField.isFocused()) {
-                showPopup(textField, stopIndex, resultList, popup);
-            }
-        });
 
-        // Track focus state and handle search functionality
+        // Create subscriptions for focus, text changes, and position changes
         textField.focusedProperty().subscribe((isFocused) -> {
             if (isFocused) {
                 // Text field gained focus - show popup and search
-                showPopup(textField, stopIndex, resultList, popup);
+                updateSearchResults(textField.getText(), stopIndex, resultList);
+
+                // Position popup under the text field
+                Node node = textField;
+                popup.setAnchorX(node.localToScreen(node.getBoundsInLocal()).getMinX());
+                popup.setAnchorY(node.localToScreen(node.getBoundsInLocal()).getMaxY());
+                popup.show(textField.getScene().getWindow());
+
+                // Subscribe to text changes when focused
+                textField.textProperty().subscribe((newText) ->
+                        updateSearchResults(newText, stopIndex, resultList));
+
+                // Subscribe to bounds changes when focused
+                textField.boundsInLocalProperty().subscribe((newBounds) -> {
+                    if (popup.isShowing()) {
+                        Node n = textField;
+                        popup.setAnchorX(n.localToScreen(n.getBoundsInLocal()).getMinX());
+                        popup.setAnchorY(n.localToScreen(n.getBoundsInLocal()).getMaxY());
+                    }
+                });
             } else {
-                // Text field lost focus - process selection and hide popup
+                // Text field lost focus - hide popup and update the selected stop
                 popup.hide();
 
                 // Select the first item in the list if something was typed but nothing selected
-                if (!resultList.getItems().isEmpty() &&
-                    !textField.getText().isEmpty() &&
-                    resultList.getSelectionModel().getSelectedItem() != null) {
-                    textField.setText(resultList.getSelectionModel().getSelectedItem());
-                } else if (!resultList.getItems().isEmpty()) {
-                    textField.setText(resultList.getItems().get(0));
+                if (!resultList.getItems().isEmpty()) {
+                    if (resultList.getSelectionModel().getSelectedItem() != null) {
+                        textField.setText(resultList.getSelectionModel().getSelectedItem());
+                    } else {
+                        textField.setText(resultList.getItems().get(0));
+                    }
                 } else {
                     textField.setText("");
                 }
@@ -120,33 +126,6 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
     }
 
     /**
-     * Helper method to show popup and update search results
-     */
-    private static void showPopup(TextField textField, StopIndex stopIndex, ListView<String> resultList, Popup popup) {
-        updateSearchResults(textField.getText(), stopIndex, resultList);
-
-        // Position popup under the text field
-        Node textFieldNode = textField;
-        popup.setAnchorX(textFieldNode.localToScreen(textFieldNode.getBoundsInLocal()).getMinX());
-        popup.setAnchorY(textFieldNode.localToScreen(textFieldNode.getBoundsInLocal()).getMaxY());
-        popup.show(textField.getScene().getWindow());
-
-        // Listen for changes in the search text
-        textField.textProperty().subscribe((newText) -> {
-            updateSearchResults(newText, stopIndex, resultList);
-        });
-
-        // Listen for changes in the position of the field (for positioning the popup)
-        textField.boundsInLocalProperty().subscribe((newBounds) -> {
-            if (popup.isShowing()) {
-                Node node = textField;
-                popup.setAnchorX(node.localToScreen(node.getBoundsInLocal()).getMinX());
-                popup.setAnchorY(node.localToScreen(node.getBoundsInLocal()).getMaxY());
-            }
-        });
-    }
-
-    /**
      * Sets the text field to display the given stop name and updates the observable stop property.
      *
      * @param stopName the stop name to display
@@ -156,7 +135,6 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
         textField.setText(newText);
 
         // Directly update the observable property 'stopO'
-        // 'stopO' is the SimpleStringProperty instance from the create() method
         if (this.stopO instanceof StringProperty property) {
             property.set(newText);
         }
@@ -166,8 +144,7 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
      * Updates the search results list based on the current query.
      */
     private static void updateSearchResults(String query, StopIndex stopIndex, ListView<String> resultList) {
-        // Always search for stops and update the list, even when query is blank
-        // This will return alphabetically sorted stops when query is blank
+        // Search for stops and update the list
         List<String> matchingStops = stopIndex.stopsMatching(query, 30);
         resultList.getItems().setAll(matchingStops);
 
