@@ -39,19 +39,21 @@ public final class StopIndex {
         // If query is blank, return all stop names in alphabetical order
         if (query == null || query.isBlank()) {
             return stopNames.stream()
-                .sorted()
-                .limit(maxResults)
-                .collect(Collectors.toList());
+                    .sorted()
+                    .limit(maxResults)
+                    .collect(Collectors.toList());
         }
 
         // Split the query into subqueries
         String[] subqueries = query.trim().split("\\s+");
 
         // Build a map of all stops (primary and alternative) to their relevance scores
-        Map<String, Integer> scores = new HashMap<>();
+//        Map<String, Integer> scores = new HashMap<>();
+        record ScoredStop(String name, int score) {}
 
+        List<ScoredStop> scoredStops = new ArrayList<>();
         // Process all stop names including alternatives
-        Set<String> allNames = new HashSet<>(stopNames);
+        List<String> allNames = new ArrayList(stopNames);
         allNames.addAll(alternativeToMain.keySet());
 
         for (String stopName : allNames) {
@@ -59,17 +61,55 @@ public final class StopIndex {
             if (score > 0) {
                 // If this is an alternative name, store the score against the primary name
                 String primaryName = alternativeToMain.getOrDefault(stopName, stopName);
-                scores.merge(primaryName, score, Integer::max);
+                scoredStops.add(new ScoredStop(primaryName, score));
             }
         }
 
-        // Sort by score (descending) and return the top results
-        return scores.entrySet().stream()
-            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-            .map(Map.Entry::getKey)
-            .distinct()
-            .limit(maxResults)
-            .collect(Collectors.toList());
+        // For single-character queries, require at least a high match score
+        // This helps prevent irrelevant results when typing just one letter
+        if (query.trim().length() == 1) {
+            int threshold = 100; // The score needs to be substantial to include
+            // scoredStops.removeIf(entry -> entry < threshold);
+        }
+
+        // Custom comparator that implements the specific ordering rules
+        Comparator<String> customComparator = (a, b) -> {
+            // First compare by scores (descending order)
+           // int scoreComparison = Integer.compare(scores.get(b), scores.get(a));
+            //if (scoreComparison != 0) {
+           //     return scoreComparison;
+           // }
+
+            // Get the base names (before any comma or space)
+            String baseA = a.split("[, ]")[0];
+            String baseB = b.split("[, ]")[0];
+
+            // If base names are different, compare them
+            int baseComparison = baseA.compareToIgnoreCase(baseB);
+            if (baseComparison != 0) {
+                return baseComparison;
+            }
+
+            // If base names are the same:
+            // 1. Names with comma come before names without comma
+            boolean aHasComma = a.contains(",");
+            boolean bHasComma = b.contains(",");
+
+            if (aHasComma && !bHasComma) {
+                return -1;
+            } else if (!aHasComma && bHasComma) {
+                return 1;
+            }
+
+            // 2. If both have or don't have commas, sort alphabetically
+            return a.compareToIgnoreCase(b);
+        };
+
+        // Return sorted results
+        return scoredStops.stream()
+                .sorted(Comparator.comparingInt(ScoredStop::score).reversed()).map(ScoredStop::name)
+                .limit(maxResults)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -120,6 +160,22 @@ public final class StopIndex {
             multiplier *= 2;
         }
 
+        // For single-character queries, boost exact word matches and penalize non-initial matches
+        if (subquery.length() == 1) {
+            // Exact matches (like just "L" as a station name) get boosted
+            if (stopName.equals(subquery)) {
+                multiplier *= 10;
+            }
+            // Stations that just start with the letter get a moderate boost
+            else if (matcher.start() == 0 && stopName.length() <= 3) {
+                multiplier *= 5;
+            }
+            // Non-initial matches get penalized heavily
+            else if (matcher.start() > 0) {
+                multiplier /= 10; // Dramatically reduce score for non-initial matches
+            }
+        }
+
         return baseScore * multiplier;
     }
 
@@ -132,12 +188,12 @@ public final class StopIndex {
 
         // Character classes for accented variants
         Map<Character, String> charClasses = Map.of(
-            'c', "[cç]",
-            'a', "[aáàâä]",
-            'e', "[eéèêë]",
-            'i', "[iíìîï]",
-            'o', "[oóòôö]",
-            'u', "[uúùûü]"
+                'c', "[cç]",
+                'a', "[aáàâä]",
+                'e', "[eéèêë]",
+                'i', "[iíìîï]",
+                'o', "[oóòôö]",
+                'u', "[uúùûü]"
         );
 
         for (char c : subquery.toCharArray()) {
