@@ -12,6 +12,7 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
@@ -73,14 +74,6 @@ public record QueryUI(
             String arr = arrivalField.textField().getText();
             departureField.setTo(arr);
             arrivalField.setTo(dep);
-
-            // Force focus on one of the fields to trigger a search
-            if (!dep.isEmpty() || !arr.isEmpty()) {
-                // Request focus on departure field to trigger search
-                departureField.textField().requestFocus();
-                // Then immediately request focus on parent to simulate a complete focus cycle
-                root.requestFocus();
-            }
         });
 
         // First row with departure and arrival stops
