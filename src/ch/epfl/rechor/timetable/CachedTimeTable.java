@@ -9,19 +9,13 @@ import java.util.Objects;
  */
 public class CachedTimeTable implements TimeTable {
     private final TimeTable underlying;
-    
+
     // Simple cache for connections and trips
     private LocalDate cachedConnectionsDate;
     private Connections cachedConnections;
-    
+
     private LocalDate cachedTripsDate;
     private Trips cachedTrips;
-    
-    // Statistics counters - simple integers since we only care about general stats
-    private int connectionCacheHits = 0;
-    private int connectionCacheMisses = 0;
-    private int tripCacheHits = 0;
-    private int tripCacheMisses = 0;
 
     /**
      * Constructs a CachedTimeTable with the given underlying timetable.
@@ -35,7 +29,7 @@ public class CachedTimeTable implements TimeTable {
 
     /**
      * Gets connections for the specified date, using the cache if available.
-     * 
+     *
      * @param date the date for which connections are requested
      * @return connections for the specified date
      * @throws NullPointerException if date is null
@@ -46,7 +40,6 @@ public class CachedTimeTable implements TimeTable {
 
         // Return cached connections if available for the requested date
         if (date.equals(cachedConnectionsDate) && cachedConnections != null) {
-            connectionCacheHits++;
             return cachedConnections;
         }
 
@@ -54,18 +47,17 @@ public class CachedTimeTable implements TimeTable {
         long startTime = System.currentTimeMillis();
         cachedConnections = underlying.connectionsFor(date);
         cachedConnectionsDate = date;
-        connectionCacheMisses++;
-        
+
         long duration = System.currentTimeMillis() - startTime;
-        System.out.println("Loaded " + cachedConnections.size() + 
-                         " connections for " + date + " in " + duration + "ms");
+        System.out.println("Loaded " + cachedConnections.size() +
+                " connections for " + date + " in " + duration + "ms");
 
         return cachedConnections;
     }
 
     /**
      * Gets trips for the specified date, using the cache if available.
-     * 
+     *
      * @param date the date for which trips are requested
      * @return trips for the specified date
      * @throws NullPointerException if date is null
@@ -76,7 +68,6 @@ public class CachedTimeTable implements TimeTable {
 
         // Return cached trips if available for the requested date
         if (date.equals(cachedTripsDate) && cachedTrips != null) {
-            tripCacheHits++;
             return cachedTrips;
         }
 
@@ -84,8 +75,7 @@ public class CachedTimeTable implements TimeTable {
         long startTime = System.currentTimeMillis();
         cachedTrips = underlying.tripsFor(date);
         cachedTripsDate = date;
-        tripCacheMisses++;
-        
+
         long duration = System.currentTimeMillis() - startTime;
         System.out.println("Loaded trips for " + date + " in " + duration + "ms");
 
