@@ -92,28 +92,6 @@ public class CachedTimeTable implements TimeTable {
         return cachedTrips;
     }
 
-    /**
-     * Clears all cached data, forcing a reload on next access.
-     */
-    public synchronized void clearCache() {
-        cachedConnections = null;
-        cachedConnectionsDate = null;
-        cachedTrips = null;
-        cachedTripsDate = null;
-        System.out.println("Cache cleared");
-    }
-
-    /**
-     * Prints cache statistics.
-     */
-    public void printCacheStatistics() {
-        System.out.println("Cache Statistics:");
-        System.out.println("- Connections: " + connectionCacheHits + 
-                          " hits, " + connectionCacheMisses + " misses");
-        System.out.println("- Trips: " + tripCacheHits + 
-                          " hits, " + tripCacheMisses + " misses");
-    }
-
     // All other methods delegate to the underlying timetable
 
     @Override
