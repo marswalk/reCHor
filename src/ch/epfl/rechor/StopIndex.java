@@ -6,78 +6,80 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * An index of stop names that allows searching for stops by name.
- * The search is case-insensitive and accent-insensitive.
+ * A searchable registry of transit locations that provides functionality for finding stations by name.
+ * The search functionality is designed to be both case-insensitive and accent-insensitive.
+ * 
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class StopIndex {
     private final List<String> stopNames;
-    private final Map<String, String> alternativeToMain;
+    private final Map<String, String> aliasToStopNameMap;
 
     /**
-     * Creates a new stop index.
+     * Initializes a new station registry.
      *
-     * @param stopNames a list of primary stop names to index
-     * @param alternativeNames a map from alternative names to their corresponding primary names
+     * @param stopNames a collection of official station names to be indexed
+     * @param stopAliases a mapping from synonym names to their corresponding official names
      */
-    public StopIndex(List<String> stopNames, Map<String, String> alternativeNames) {
+    public StopIndex(List<String> stopNames, Map<String, String> stopAliases) {
         this.stopNames = new ArrayList<>(stopNames);
-        this.alternativeToMain = new HashMap<>(alternativeNames);
+        this.aliasToStopNameMap = new HashMap<>(stopAliases);
     }
 
     /**
-     * Searches for stops that match the given query.
+     * Retrieves stations that correspond to the provided search term.
      *
-     * @param query the search query, which will be split by spaces into subqueries
-     * @param maxResults the maximum number of results to return
-     * @return a list of stop names matching the query, sorted by decreasing relevance score
+     * @param searchTerm the input string to search for, which will be divided by spaces into search tokens
+     * @param resultLimit the upper bound on number of results to return
+     * @return a list of station names that match the search criteria, ordered by relevance score in descending order
      */
-    public List<String> stopsMatching(String query, int maxResults) {
-        if (maxResults <= 0) {
-            throw new IllegalArgumentException("maxResults must be positive");
+    public List<String> stopsMatching(String searchTerm, int resultLimit) {
+        if (resultLimit <= 0) {
+            throw new IllegalArgumentException("resultLimit must be positive");
         }
 
-        // If query is blank, return all stop names in alphabetical order
-        if (query == null || query.isBlank()) {
+        // If searchTerm is blank, return all station names in alphabetical order
+        if (searchTerm == null || searchTerm.isBlank()) {
             return stopNames.stream()
                     .sorted()
-                    .limit(maxResults)
+                    .limit(resultLimit)
                     .collect(Collectors.toList());
         }
 
-        // Split the query into subqueries
-        String[] subqueries = query.trim().split("\\s+");
+        // Divide the searchTerm into individual tokens
+        String[] searchTokens = searchTerm.trim().split("\\s+");
 
-        // Build a map of all stops (primary and alternative) to their relevance scores
-//        Map<String, Integer> scores = new HashMap<>();
-        record ScoredStop(String name, int score) {}
+        // Store stops with their relevance scores
+        record RankedStop(String name, int relevance) {}
 
-        List<ScoredStop> scoredStops = new ArrayList<>();
-        // Process all stop names including alternatives
-        List<String> allNames = new ArrayList(stopNames);
-        allNames.addAll(alternativeToMain.keySet());
+        List<RankedStop> rankedResults = new ArrayList<>();
+        // Process all stop names including aliases
+        List<String> allStopNames = new ArrayList(stopNames);
+        allStopNames.addAll(aliasToStopNameMap.keySet());
 
-        for (String stopName : allNames) {
-            int score = calculateScore(stopName, subqueries);
-            if (score > 0) {
-                // If this is an alternative name, store the score against the primary name
-                String primaryName = alternativeToMain.getOrDefault(stopName, stopName);
-                scoredStops.add(new ScoredStop(primaryName, score));
+        for (String stopName : allStopNames) {
+            int relevance = computeRelevance(stopName, searchTokens);
+            if (relevance > 0) {
+                // If this is an alias name, store the relevance against the official name
+                String officialStopName = aliasToStopNameMap.getOrDefault(stopName, stopName);
+                rankedResults.add(new RankedStop(officialStopName, relevance));
             }
         }
 
-        // For single-character queries, require at least a high match score
+        // For single-character searches, require at least a high match relevance
         // This helps prevent irrelevant results when typing just one letter
-        if (query.trim().length() == 1) {
-            int threshold = 100; // The score needs to be substantial to include
-            // scoredStops.removeIf(entry -> entry < threshold);
+        if (searchTerm.trim().length() == 1) {
+            int minimumThreshold = 100; // The relevance needs to be substantial to include
+            // rankedResults.removeIf(entry -> entry < minimumThreshold);
         }
 
         // Custom comparator that implements the specific ordering rules
         Comparator<String> customComparator = (a, b) -> {
-            // First compare by scores (descending order)
-           // int scoreComparison = Integer.compare(scores.get(b), scores.get(a));
-            //if (scoreComparison != 0) {
-           //     return scoreComparison;
+            // First compare by relevance (descending order)
+           // int relevanceComparison = Integer.compare(scores.get(b), scores.get(a));
+            //if (relevanceComparison != 0) {
+           //     return relevanceComparison;
            // }
 
             // Get the base names (before any comma or space)
@@ -106,88 +108,88 @@ public final class StopIndex {
         };
 
         // Return sorted results
-        return scoredStops.stream()
-                .sorted(Comparator.comparingInt(ScoredStop::score).reversed()).map(ScoredStop::name)
-                .limit(maxResults)
+        return rankedResults.stream()
+                .sorted(Comparator.comparingInt(RankedStop::relevance).reversed()).map(RankedStop::name)
+                .limit(resultLimit)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Calculates the relevance score of a stop name for the given subqueries.
+     * Calculates the overall relevance value of a station name based on the provided search tokens.
      */
-    private int calculateScore(String stopName, String[] subqueries) {
-        int totalScore = 0;
+    private int computeRelevance(String stopName, String[] searchTokens) {
+        int aggregateScore = 0;
 
-        for (String subquery : subqueries) {
-            int subqueryScore = calculateSubqueryScore(stopName, subquery);
-            if (subqueryScore == 0) {
-                // If any subquery doesn't match, the whole query doesn't match
+        for (String token : searchTokens) {
+            int tokenScore = evaluateTokenMatch(stopName, token);
+            if (tokenScore == 0) {
+                // If any token doesn't match, the entire search doesn't match
                 return 0;
             }
-            totalScore += subqueryScore;
+            aggregateScore += tokenScore;
         }
 
-        return totalScore;
+        return aggregateScore;
     }
 
     /**
-     * Calculates the score for a single subquery.
+     * Evaluates the match quality for a single search token.
      */
-    private int calculateSubqueryScore(String stopName, String subquery) {
-        Pattern pattern = createPatternForSubquery(subquery);
-        Matcher matcher = pattern.matcher(stopName);
+    private int evaluateTokenMatch(String stopName, String token) {
+        Pattern matchPattern = createPatternForToken(token);
+        Matcher textMatcher = matchPattern.matcher(stopName);
 
-        if (!matcher.find()) {
+        if (!textMatcher.find()) {
             return 0;
         }
 
-        // Calculate base score (percentage of characters matched)
-        int matchLength = matcher.end() - matcher.start();
-        int baseScore = matchLength * 100 / stopName.length();
+        // Calculate base relevance (percentage of characters matched)
+        int matchLength = textMatcher.end() - textMatcher.start();
+        int baseRelevance = matchLength * 100 / stopName.length();
 
-        // Apply multipliers for word boundaries
-        int multiplier = 1;
+        // Apply bonuses for word boundaries
+        int weightMultiplier = 1;
 
         // Check if the match is at the beginning of a word
-        boolean isWordStart = matcher.start() == 0 || !Character.isLetter(stopName.charAt(matcher.start() - 1));
-        if (isWordStart) {
-            multiplier *= 4;
+        boolean startsWord = textMatcher.start() == 0 || !Character.isLetter(stopName.charAt(textMatcher.start() - 1));
+        if (startsWord) {
+            weightMultiplier *= 4;
         }
 
         // Check if the match is at the end of a word
-        boolean isWordEnd = matcher.end() == stopName.length() || !Character.isLetter(stopName.charAt(matcher.end()));
-        if (isWordEnd) {
-            multiplier *= 2;
+        boolean endsWord = textMatcher.end() == stopName.length() || !Character.isLetter(stopName.charAt(textMatcher.end()));
+        if (endsWord) {
+            weightMultiplier *= 2;
         }
 
-        // For single-character queries, boost exact word matches and penalize non-initial matches
-        if (subquery.length() == 1) {
+        // For single-character searches, boost exact word matches and penalize non-initial matches
+        if (token.length() == 1) {
             // Exact matches (like just "L" as a station name) get boosted
-            if (stopName.equals(subquery)) {
-                multiplier *= 10;
+            if (stopName.equals(token)) {
+                weightMultiplier *= 10;
             }
             // Stations that just start with the letter get a moderate boost
-            else if (matcher.start() == 0 && stopName.length() <= 3) {
-                multiplier *= 5;
+            else if (textMatcher.start() == 0 && stopName.length() <= 3) {
+                weightMultiplier *= 5;
             }
             // Non-initial matches get penalized heavily
-            else if (matcher.start() > 0) {
-                multiplier /= 10; // Dramatically reduce score for non-initial matches
+            else if (textMatcher.start() > 0) {
+                weightMultiplier /= 10; // Dramatically reduce relevance for non-initial matches
             }
         }
 
-        return baseScore * multiplier;
+        return baseRelevance * weightMultiplier;
     }
 
     /**
-     * Creates a pattern for a subquery with special handling of accented characters.
+     * Generates a search pattern for a token with special handling for accented characters.
      */
-    private Pattern createPatternForSubquery(String subquery) {
+    private Pattern createPatternForToken(String token) {
         // Build regex with character classes for accented letters
-        StringBuilder regex = new StringBuilder();
+        StringBuilder patternBuilder = new StringBuilder();
 
         // Character classes for accented variants
-        Map<Character, String> charClasses = Map.of(
+        Map<Character, String> accentVariants = Map.of(
                 'c', "[cç]",
                 'a', "[aáàâä]",
                 'e', "[eéèêë]",
@@ -196,31 +198,31 @@ public final class StopIndex {
                 'u', "[uúùûü]"
         );
 
-        for (char c : subquery.toCharArray()) {
+        for (char c : token.toCharArray()) {
             char lowerC = Character.toLowerCase(c);
-            String charClass = charClasses.get(lowerC);
+            String charVariants = accentVariants.get(lowerC);
 
-            if (charClass != null) {
+            if (charVariants != null) {
                 // If the character is one that has accented variants
                 if (Character.isUpperCase(c)) {
                     // For uppercase characters, preserve case sensitivity
-                    regex.append(Pattern.quote(String.valueOf(c)));
+                    patternBuilder.append(Pattern.quote(String.valueOf(c)));
                 } else {
                     // For lowercase, use the character class
-                    regex.append(charClass);
+                    patternBuilder.append(charVariants);
                 }
             } else {
                 // For other characters, use them directly with proper escaping
-                regex.append(Pattern.quote(String.valueOf(c)));
+                patternBuilder.append(Pattern.quote(String.valueOf(c)));
             }
         }
 
-        // If subquery has no uppercase letters, make the pattern case insensitive
+        // If token has no uppercase letters, make the pattern case insensitive
         int flags = Pattern.UNICODE_CASE;
-        if (subquery.equals(subquery.toLowerCase())) {
+        if (token.equals(token.toLowerCase())) {
             flags |= Pattern.CASE_INSENSITIVE;
         }
 
-        return Pattern.compile(regex.toString(), flags);
+        return Pattern.compile(patternBuilder.toString(), flags);
     }
 }
