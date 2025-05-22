@@ -17,6 +17,9 @@ import java.util.Set;
  */
 public final class JourneyGeoJsonConverter {
 
+    // Precision for rounding coordinates to 5 decimal places (about 1 meter)
+    private static final int GEOJSON_COORDINATE_PRECISION = 100000;
+
     // Private constructor to prevent instantiation
     private JourneyGeoJsonConverter() {}
 
@@ -48,8 +51,8 @@ public final class JourneyGeoJsonConverter {
 
         // Create the GeoJSON LineString object
         Map<String, Json> geoJson = Map.of(
-            "type", new JString("LineString"),
-            "coordinates", new JArray(coordinates)
+                "type", new JString("LineString"),
+                "coordinates", new JArray(coordinates)
         );
 
         return new JObject(geoJson);
@@ -59,9 +62,9 @@ public final class JourneyGeoJsonConverter {
      * Adds a stop's coordinates to the list if they haven't been added before.
      */
     private static void addCoordinates(Stop stop, List<Json> coordinates, Set<String> addedCoords) {
-        // Round to 5 decimal places
-        double lon = Math.round(stop.longitude() * 100000) / 100000.0;
-        double lat = Math.round(stop.latitude() * 100000) / 100000.0;
+        // Round to 5 decimal places using the defined precision constant
+        double lon = Math.round(stop.longitude() * GEOJSON_COORDINATE_PRECISION) / (double) GEOJSON_COORDINATE_PRECISION;
+        double lat = Math.round(stop.latitude() * GEOJSON_COORDINATE_PRECISION) / (double) GEOJSON_COORDINATE_PRECISION;
 
         // Create a string key for the coordinates to check for duplicates
         String coordKey = lon + "," + lat;
@@ -76,8 +79,8 @@ public final class JourneyGeoJsonConverter {
 
         // Create coordinate pair [lon, lat]
         List<Json> coordPair = List.of(
-            new JNumber(lon),
-            new JNumber(lat)
+                new JNumber(lon),
+                new JNumber(lat)
         );
         coordinates.add(new JArray(coordPair));
     }
