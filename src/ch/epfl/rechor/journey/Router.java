@@ -9,6 +9,9 @@ import java.time.LocalDate;
 
 public record Router(TimeTable timeTable) {
 
+    // Constant for "not walkable" sentinel value
+    private static final int WALKABLE_DISTANCE_NOT_FOUND = -1;
+
     public Profile profile(LocalDate date, int destinationStopId) {
         Profile.Builder profile = new Profile.Builder(
                 timeTable, date, timeTable.stationId(destinationStopId));
@@ -27,7 +30,7 @@ public record Router(TimeTable timeTable) {
             int depStationId = timeTable.stationId(depStopId);
             int arrStationId = timeTable.stationId(arrStopId);
 
-            if (walkableDistance[arrStationId] != -1) {
+            if (walkableDistance[arrStationId] != WALKABLE_DISTANCE_NOT_FOUND) {
                 int payload = Bits32_24_8.pack(connectionId, 0);
                 pareto.add(arrMins + walkableDistance[arrStationId], 0, payload);
             }
@@ -100,7 +103,7 @@ public record Router(TimeTable timeTable) {
     private int[] getWalkableDistance(int destinationStopId) {
         int[] walkableDistance = new int[timeTable.stations().size()];
         for (int i = 0; i < timeTable.stations().size(); i++) {
-            walkableDistance[i] = -1;
+            walkableDistance[i] = WALKABLE_DISTANCE_NOT_FOUND;
         }
 
         int range = timeTable.transfers().arrivingAt(timeTable.stationId(destinationStopId));
