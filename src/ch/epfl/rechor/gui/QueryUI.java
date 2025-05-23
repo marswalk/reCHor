@@ -106,16 +106,16 @@ public record QueryUI(
         });
 
         // First row with departure and arrival stops
-        HBox stopsBox = new HBox(5);
+        HBox stopsBox = new HBox();
         stopsBox.setAlignment(Pos.CENTER_LEFT);
 
         // Create departure container
-        HBox depBox = new HBox(5);
+        HBox depBox = new HBox();
         depBox.setAlignment(Pos.CENTER_LEFT);
         depBox.getChildren().addAll(depLabel, departureField.textField());
 
         // Create arrival container
-        HBox arrBox = new HBox(5);
+        HBox arrBox = new HBox();
         arrBox.setAlignment(Pos.CENTER_LEFT);
         arrBox.getChildren().addAll(arrLabel, arrivalField.textField());
 
@@ -137,14 +137,14 @@ public record QueryUI(
         Label timeLabel = new Label("Heure\u202f:");
 
         // Second row with date and time
-        HBox dateTimeBox = new HBox(5);
+        HBox dateTimeBox = new HBox();
         dateTimeBox.setAlignment(Pos.CENTER_LEFT);
 
-        HBox dateBox = new HBox(5);
+        HBox dateBox = new HBox();
         dateBox.setAlignment(Pos.CENTER_LEFT);
         dateBox.getChildren().addAll(dateLabel, datePicker);
 
-        HBox timeBox = new HBox(5);
+        HBox timeBox = new HBox();
         timeBox.setAlignment(Pos.CENTER_LEFT);
         timeBox.getChildren().addAll(timeLabel, timeField);
 
