@@ -120,7 +120,7 @@ public final class StopIndex {
         return rankedResults.stream()
                 .sorted(Comparator.comparingInt(RankedStop::relevance).reversed())
                 .map(RankedStop::name)
-                .distinct() // <-- removes duplicates, keeps first occurrence
+                .distinct() // <-- removes duplicates, keeps first occurrence  
                 .limit(resultLimit)
                 .collect(Collectors.toList());
     }
