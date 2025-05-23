@@ -8,7 +8,6 @@ import ch.epfl.rechor.journey.JourneyIcalConverter;
 
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
-import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Accordion;
@@ -31,7 +30,6 @@ import java.awt.Desktop;
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -157,7 +155,7 @@ public record DetailUI(Node rootNode) {
             super.layoutChildren();
 
             // Clear and redraw all connecting lines
-            Pane annotationsPane = (Pane) getParent().getChildrenUnmodifiable().get(0);
+            Pane annotationsPane = (Pane) getParent().getChildrenUnmodifiable().getFirst();
             annotationsPane.getChildren().clear();
 
             for (Circle[] pair : circlePairs) {

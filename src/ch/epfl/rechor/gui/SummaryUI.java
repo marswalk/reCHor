@@ -2,8 +2,6 @@ package ch.epfl.rechor.gui;
 
 import ch.epfl.rechor.FormatterFr;
 import ch.epfl.rechor.journey.Journey;
-import ch.epfl.rechor.journey.Stop;
-import ch.epfl.rechor.journey.Vehicle;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
@@ -14,7 +12,6 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -27,7 +24,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Represents the graphical user interface component that provides an overview of all journeys
@@ -105,7 +101,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
         // Create observable value for selected journey
         ObjectProperty<Journey> selectedJourneyProperty = new SimpleObjectProperty<>();
         journeyListView.getSelectionModel().selectedItemProperty().subscribe(
-                (newJourney) -> selectedJourneyProperty.set(newJourney));
+                selectedJourneyProperty::set);
 
         return new SummaryUI(journeyListView, selectedJourneyProperty);
     }
@@ -132,7 +128,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
 
         // If no journey was found, select the last one
         if (selectedJourney == null && !journeys.isEmpty()) {
-            selectedJourney = journeys.get(journeys.size() - 1);
+            selectedJourney = journeys.getLast();
         }
 
         if (selectedJourney != null) {
@@ -375,7 +371,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
 
                 if (circles.size() >= 2) {
                     // First circle is departure
-                    Circle departureCircle = (Circle) circles.get(0);
+                    Circle departureCircle = (Circle) circles.getFirst();
                     departureCircle.setCenterX(LINE_MARGIN);
                     departureCircle.setCenterY(height / 2);
 

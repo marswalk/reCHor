@@ -131,7 +131,7 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
                     if (resultList.getSelectionModel().getSelectedItem() != null) {
                         textField.setText(resultList.getSelectionModel().getSelectedItem());
                     } else {
-                        textField.setText(resultList.getItems().get(0));
+                        textField.setText(resultList.getItems().getFirst());
                     }
                 } else {
                     textField.setText("");
