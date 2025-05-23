@@ -118,7 +118,9 @@ public final class StopIndex {
 
         // Return sorted results
         return rankedResults.stream()
-                .sorted(Comparator.comparingInt(RankedStop::relevance).reversed()).map(RankedStop::name)
+                .sorted(Comparator.comparingInt(RankedStop::relevance).reversed())
+                .map(RankedStop::name)
+                .distinct() // <-- removes duplicates, keeps first occurrence
                 .limit(resultLimit)
                 .collect(Collectors.toList());
     }
