@@ -14,24 +14,41 @@ import javafx.stage.Popup;
 import java.util.List;
 
 /**
- * Represents a text field that allows users to search and select public transport stops.
+ * Represents a text field for searching and selecting public transport stops.
  * <p>
- * The component displays a popup with matching stops when the field is focused.
- * Users can navigate the suggestions using keyboard arrow keys and select a stop.
- *
+ * This component provides an auto-completion feature by displaying a popup with matching stops
+ * as the user types. Users can navigate the suggestions using the keyboard and select a stop.
+ * </p>
+ * 
+ * <h2>Features:</h2>
+ * <ul>
+ *   <li>Displays a popup with up to 30 matching stops based on user input.</li>
+ *   <li>Allows navigation of suggestions using arrow keys.</li>
+ *   <li>Automatically updates the selected stop when the field loses focus.</li>
+ *   <li>Supports swapping of stop names programmatically.</li>
+ * </ul>
+ * 
  * @param textField the text field used for input and display
  * @param stopO     an observable value containing the selected stop name
- *
+ * 
+ * @see javafx.scene.control.TextField
+ * @see javafx.stage.Popup
+ * @see javafx.scene.control.ListView
+ * 
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
  */
 public record StopField(TextField textField, ObservableValue<String> stopO) {
 
     /**
-     * Creates a new stop field that uses the provided index for searching stops.
+     * Creates a new stop field using the provided stop index for searching stops.
+     * <p>
+     * This method initializes the text field, popup, and result list, and sets up
+     * event handlers for user interactions, such as keyboard navigation and focus changes.
+     * </p>
      *
      * @param stopIndex the index to use for searching stops
-     * @return a new stop field component
+     * @return a new instance of StopField
      */
     public static StopField create(StopIndex stopIndex) {
         // Create the text field and result popup
@@ -127,6 +144,10 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
 
     /**
      * Sets the text field to display the given stop name and updates the observable stop property.
+     * <p>
+     * This method is used to programmatically set the stop name in the text field and ensure
+     * the observable value is updated accordingly.
+     * </p>
      *
      * @param stopName the stop name to display
      */
@@ -142,6 +163,14 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
 
     /**
      * Updates the search results list based on the current query.
+     * <p>
+     * This method searches for stops matching the query and updates the popup list
+     * with the top 30 results. The first result is selected by default.
+     * </p>
+     *
+     * @param query      the search query entered by the user
+     * @param stopIndex  the index to use for searching stops
+     * @param resultList the list view to display the search results
      */
     private static void updateSearchResults(String query, StopIndex stopIndex, ListView<String> resultList) {
         // Search for stops and update the list

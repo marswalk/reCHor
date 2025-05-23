@@ -22,10 +22,30 @@ import java.time.LocalDate;
 import java.util.*;
 
 /**
- * Main application class for ReCHor journey planner.
+ * Main application class for the ReCHor journey planner.
  * <p>
  * This class integrates all UI components (query interface, journey summary, and journey details)
- * and handles the journey search logic.
+ * and handles the journey search logic. It also manages the loading of timetable data and
+ * the creation of observable bindings for journey search results.
+ * </p>
+ * <p>
+ * The application allows users to search for journeys by specifying departure and arrival stops,
+ * as well as the date and time of travel. The results are dynamically updated based on user input.
+ * </p>
+ *
+ * <h2>Responsibilities:</h2>
+ * <ul>
+ *   <li>Load timetable data and initialize the router.</li>
+ *   <li>Set up the query interface for user input.</li>
+ *   <li>Create observable bindings for journey search results.</li>
+ *   <li>Combine UI components into a cohesive graphical interface.</li>
+ * </ul>
+ *
+ * @see QueryUI
+ * @see SummaryUI
+ * @see DetailUI
+ * @see Router
+ * @see JourneyExtractor
  *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
@@ -49,7 +69,12 @@ public class Main extends Application {
     }
 
     /**
-     * Starts the application and constructs the user interface.
+     * Starts the JavaFX application and constructs the main user interface.
+     * <p>
+     * This method initializes the timetable data, sets up the query interface, and binds
+     * the journey search results to the user input. It also configures the main application
+     * window and ensures the UI is ready for user interaction.
+     * </p>
      *
      * @param primaryStage the primary stage for the application
      */
@@ -153,10 +178,14 @@ public class Main extends Application {
     }
 
     /**
-     * Finds the station ID corresponding to a station name.
+     * Finds the station ID corresponding to a given station name.
+     * <p>
+     * This method searches both the list of station names and their aliases to find
+     * the ID of the station that matches the provided name.
+     * </p>
      *
-     * @param stationName the name of the station
-     * @return the station ID, or -1 if not found
+     * @param stationName the name of the station to search for
+     * @return the station ID if found, or -1 if no matching station is found
      */
     private int findStationId(String stationName) {
         // Search in stations

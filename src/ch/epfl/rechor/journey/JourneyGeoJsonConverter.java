@@ -13,7 +13,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Converts journeys to GeoJSON format for visualization on maps.
+ * A utility class for converting journeys into GeoJSON format for visualization on maps.
+ * The GeoJSON format is used to represent the journey as a LineString.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public final class JourneyGeoJsonConverter {
 
@@ -24,12 +28,11 @@ public final class JourneyGeoJsonConverter {
     private JourneyGeoJsonConverter() {}
 
     /**
-     * Converts a journey to a GeoJSON LineString representation.
-     * The GeoJSON will include all stops in the journey with coordinates
-     * rounded to 5 decimal places.
+     * Converts a journey into a GeoJSON LineString representation.
+     * The GeoJSON includes all stops in the journey, with coordinates rounded to 5 decimal places.
      *
-     * @param journey the journey to convert
-     * @return a JSON object representing the journey in GeoJSON format
+     * @param journey the journey to convert. Must not be null.
+     * @return a {@link Json} object representing the journey in GeoJSON format.
      */
     public static Json toGeoJson(Journey journey) {
         List<Json> coordinates = new ArrayList<>();
@@ -59,7 +62,11 @@ public final class JourneyGeoJsonConverter {
     }
 
     /**
-     * Adds a stop's coordinates to the list if they haven't been added before.
+     * Adds a stop's coordinates to the GeoJSON coordinate list if they are not already included.
+     *
+     * @param stop the stop whose coordinates are to be added. Must not be null.
+     * @param coordinates the list of coordinates to which the stop's coordinates will be added.
+     * @param addedCoords a set of coordinate keys used to track duplicates.
      */
     private static void addCoordinates(Stop stop, List<Json> coordinates, Set<String> addedCoords) {
         // Round to 5 decimal places using the defined precision constant

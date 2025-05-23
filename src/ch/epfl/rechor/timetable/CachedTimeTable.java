@@ -4,8 +4,13 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 /**
- * Represents a timetable with cached date-dependent data (connections and trips).
- * Improves performance by avoiding reloading data when the same date is requested multiple times.
+ * A timetable implementation that caches date-dependent data (connections and trips)
+ * to improve performance by avoiding redundant data loading for the same date.
+ * <p>
+ * This cache stores data for only one day at a time.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public class CachedTimeTable implements TimeTable {
     private final TimeTable underlying;
@@ -28,7 +33,10 @@ public class CachedTimeTable implements TimeTable {
     }
 
     /**
-     * Gets connections for the specified date, using the cache if available.
+     * Retrieves connections for the specified date, using the cache if available.
+     * <p>
+     * If the requested date matches the cached date, the cached connections are returned.
+     * Otherwise, the connections are loaded from the underlying timetable and cached.
      *
      * @param date the date for which connections are requested
      * @return connections for the specified date
@@ -56,7 +64,10 @@ public class CachedTimeTable implements TimeTable {
     }
 
     /**
-     * Gets trips for the specified date, using the cache if available.
+     * Retrieves trips for the specified date, using the cache if available.
+     * <p>
+     * If the requested date matches the cached date, the cached trips are returned.
+     * Otherwise, the trips are loaded from the underlying timetable and cached.
      *
      * @param date the date for which trips are requested
      * @return trips for the specified date
@@ -84,46 +95,95 @@ public class CachedTimeTable implements TimeTable {
 
     // All other methods delegate to the underlying timetable
 
+    /**
+     * Retrieves the stations from the underlying timetable.
+     *
+     * @return the stations
+     */
     @Override
     public Stations stations() {
         return underlying.stations();
     }
 
+    /**
+     * Retrieves the station aliases from the underlying timetable.
+     *
+     * @return the station aliases
+     */
     @Override
     public StationAliases stationAliases() {
         return underlying.stationAliases();
     }
 
+    /**
+     * Retrieves the platforms from the underlying timetable.
+     *
+     * @return the platforms
+     */
     @Override
     public Platforms platforms() {
         return underlying.platforms();
     }
 
+    /**
+     * Retrieves the routes from the underlying timetable.
+     *
+     * @return the routes
+     */
     @Override
     public Routes routes() {
         return underlying.routes();
     }
 
+    /**
+     * Retrieves the transfers from the underlying timetable.
+     *
+     * @return the transfers
+     */
     @Override
     public Transfers transfers() {
         return underlying.transfers();
     }
 
+    /**
+     * Retrieves the station ID corresponding to the given stop ID from the underlying timetable.
+     *
+     * @param stopId the stop ID
+     * @return the station ID
+     */
     @Override
     public int stationId(int stopId) {
         return underlying.stationId(stopId);
     }
 
+    /**
+     * Retrieves the platform name corresponding to the given stop ID from the underlying timetable.
+     *
+     * @param stopId the stop ID
+     * @return the platform name
+     */
     @Override
     public String platformName(int stopId) {
         return underlying.platformName(stopId);
     }
 
+    /**
+     * Checks if the given stop ID corresponds to a station in the underlying timetable.
+     *
+     * @param stopId the stop ID
+     * @return true if the stop ID corresponds to a station, false otherwise
+     */
     @Override
     public boolean isStationId(int stopId) {
         return underlying.isStationId(stopId);
     }
 
+    /**
+     * Checks if the given stop ID corresponds to a platform in the underlying timetable.
+     *
+     * @param stopId the stop ID
+     * @return true if the stop ID corresponds to a platform, false otherwise
+     */
     @Override
     public boolean isPlatformId(int stopId) {
         return underlying.isPlatformId(stopId);

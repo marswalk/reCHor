@@ -25,17 +25,36 @@ import java.time.format.DateTimeFormatter;
 /**
  * Represents the query interface for searching journeys.
  * <p>
- * This component allows users to select departure and arrival stops,
- * and choose the date and time for their journey search.
- *
+ * This component allows users to specify the parameters for their journey search, including:
+ * <ul>
+ *   <li>Departure stop</li>
+ *   <li>Arrival stop</li>
+ *   <li>Date of travel</li>
+ *   <li>Time of travel</li>
+ * </ul>
+ * The interface dynamically updates the search results based on user input.
+ * </p>
+ * 
+ * <h2>Features:</h2>
+ * <ul>
+ *   <li>Text fields for entering departure and arrival stops, with auto-completion support.</li>
+ *   <li>A date picker for selecting the travel date.</li>
+ *   <li>A time field with formatted input for specifying the travel time.</li>
+ *   <li>A button to swap the departure and arrival stops.</li>
+ * </ul>
+ * 
  * @param rootNode  the root JavaFX node for this component
  * @param depStopO  observable value containing the selected departure stop name
  * @param arrStopO  observable value containing the selected arrival stop name
  * @param dateO     observable value containing the selected date
  * @param timeO     observable value containing the selected time
- *
+ * 
+ * @see StopField
+ * @see javafx.scene.control.DatePicker
+ * @see javafx.scene.control.TextFormatter
+ * 
  * @author Guanting Wen (392412)
- * @author Ben Fall (373176)
+@author Ben Fall (373176)
  */
 public record QueryUI(
         Node rootNode,
@@ -44,11 +63,21 @@ public record QueryUI(
         ObservableValue<LocalDate> dateO,
         ObservableValue<LocalTime> timeO) {
 
+    private static final DateTimeFormatter DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter INPUT_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
+    private static final StringConverter<LocalTime> TIME_CONVERTER = new LocalTimeStringConverter(DISPLAY_FORMATTER, INPUT_FORMATTER);
+    private static final TextFormatter<LocalTime> TIME_FORMATTER = new TextFormatter<>(TIME_CONVERTER, LocalTime.now());
+
     /**
-     * Creates a new query interface that uses the provided stop index.
+     * Creates a new query interface using the provided stop index.
+     * <p>
+     * This method initializes all UI components, including text fields for stops,
+     * a date picker, and a time field. It also sets up event handlers for user interactions,
+     * such as swapping stops and updating observable values.
+     * </p>
      *
      * @param stopIndex the index to use for searching stops
-     * @return a new query UI component
+     * @return a new instance of QueryUI
      */
     public static QueryUI create(StopIndex stopIndex) {
         // Root container
@@ -98,17 +127,12 @@ public record QueryUI(
         Label dateLabel = new Label("Date\u202f:");
 
         // Create time field with formatter
-        DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("H:mm");
-        StringConverter<LocalTime> timeConverter = new LocalTimeStringConverter(displayFormatter, inputFormatter);
-
         ObjectProperty<LocalTime> timeProperty = new SimpleObjectProperty<>(LocalTime.now());
         TextField timeField = new TextField();
         timeField.setId("time");
 
-        TextFormatter<LocalTime> timeFormatter = new TextFormatter<>(timeConverter, timeProperty.get());
-        timeField.setTextFormatter(timeFormatter);
-        timeProperty.bind(timeFormatter.valueProperty());
+        timeField.setTextFormatter(TIME_FORMATTER);
+        timeProperty.bind(TIME_FORMATTER.valueProperty());
 
         Label timeLabel = new Label("Heure\u202f:");
 

@@ -37,17 +37,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents the detail view of a journey in the GUI.
- * Displays all journey legs, intermediate stops, and provides functionality
- * for map view and iCalendar export.
+ * Represents the detailed view of a journey in the GUI.
+ * <p>
+ * This class is responsible for displaying the details of a selected journey,
+ * including its legs, intermediate stops, and additional functionalities such as
+ * viewing the journey on a map or exporting it as an iCalendar event.
+ * </p>
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public record DetailUI(Node rootNode) {
 
     /**
-     * Creates a new DetailUI with the provided journey observable.
+     * Creates a new instance of {@code DetailUI} for the given observable journey.
+     * <p>
+     * The UI dynamically updates to reflect changes in the observable journey.
+     * If no journey is available, a "No journey" message is displayed.
+     * </p>
      *
-     * @param journeyObservable the observable journey to display
-     * @return a new DetailUI instance
+     * @param journeyObservable the observable value containing the journey to display
+     * @return a new {@code DetailUI} instance
      */
     public static DetailUI create(ObservableValue<Journey> journeyObservable) {
         // Create the root scroll pane
@@ -136,7 +146,8 @@ public record DetailUI(Node rootNode) {
     }
 
     /**
-     * Custom GridPane that draws connecting lines between departure and arrival circles.
+     * Custom {@link GridPane} for displaying journey legs and drawing connecting lines
+     * between departure and arrival points.
      */
     private static class LegsGridPane extends GridPane {
         final List<Circle[]> circlePairs = new ArrayList<>();
@@ -169,10 +180,15 @@ public record DetailUI(Node rootNode) {
     }
 
     /**
-     * Displays all journey legs in the grid.
+     * Populates the grid with the legs of the given journey.
+     * <p>
+     * Each leg is displayed with its relevant details, such as departure and arrival
+     * times, stops, and vehicle information. Intermediate stops are displayed in an
+     * expandable section.
+     * </p>
      *
-     * @param journey the journey to display
-     * @param legsGrid the grid pane to display the legs in
+     * @param journey  the journey whose legs are to be displayed
+     * @param legsGrid the grid pane to populate with journey leg details
      */
     private static void displayJourneyLegs(Journey journey, LegsGridPane legsGrid) {
         int rowIndex = 0;
@@ -287,9 +303,13 @@ public record DetailUI(Node rootNode) {
     }
 
     /**
-     * Shows the journey on a map in the default web browser.
+     * Opens the journey's route in the default web browser using uMap.
+     * <p>
+     * The journey is visualized as a GeoJSON document passed as a query parameter
+     * to the uMap service.
+     * </p>
      *
-     * @param journey the journey to display
+     * @param journey the journey to display on the map
      */
     private static void showJourneyMap(Journey journey) {
         try {

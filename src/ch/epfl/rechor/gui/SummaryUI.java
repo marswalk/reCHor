@@ -30,13 +30,30 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * UI component displaying a visual summary of journeys with their timings and transfers.
+ * Represents the graphical user interface component that provides an overview of all journeys
+ * for a given day. This component displays a list of journeys with details such as departure time,
+ * arrival time, duration, and transfer points.
  * 
- * @param rootNode the root node
- * @param selectedJourneyO the selected journey
+ * <p>The journeys are displayed in a {@link ListView}, where each journey is represented by a custom
+ * cell. The list is sorted by departure time, and the first journey departing at or after the desired
+ * departure time is automatically selected.</p>
  * 
- * @return a new SummaryUI instance
+ * <p>The graphical representation of each journey includes:</p>
+ * <ul>
+ *   <li>An icon representing the type of vehicle for the first transport leg.</li>
+ *   <li>The departure and arrival times.</li>
+ *   <li>A graphical line with circles indicating stops and transfers.</li>
+ *   <li>The total duration of the journey.</li>
+ * </ul>
  * 
+ * <p>This class is part of the ReCHor project and is used to display the second main section of the
+ * graphical interface, as described in the project specifications.</p>
+ * 
+ * @param rootNode the root node of the scene graph
+ * @param selectedJourneyO an observable value containing the currently selected journey
+ * @see javafx.scene.control.ListView
+ * @see ch.epfl.rechor.journey.Journey
+ *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
  */
@@ -46,11 +63,12 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
     private static final int CIRCLE_RADIUS = 3;
 
     /**
-     * Creates a new SummaryUI with the given journey list and departure time.
+     * Creates a new {@code SummaryUI} instance that displays a list of journeys and allows
+     * the user to select a journey.
      *
-     * @param journeysO the observable list of journeys
-     * @param depTimeO  the observable departure time
-     * @return a new SummaryUI instance
+     * @param journeysO an observable value containing the list of journeys to display
+     * @param depTimeO an observable value containing the desired departure time
+     * @return a new {@code SummaryUI} instance
      */
     public static SummaryUI create(ObservableValue<List<Journey>> journeysO, ObservableValue<LocalTime> depTimeO) {
         ListView<Journey> journeyListView = new ListView<>();
@@ -92,6 +110,14 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
         return new SummaryUI(journeyListView, selectedJourneyProperty);
     }
 
+    /**
+     * Selects the journey in the list view that departs at or after the specified departure time.
+     * If no such journey exists, the last journey in the list is selected.
+     *
+     * @param listView the {@link ListView} displaying the journeys
+     * @param journeys the list of journeys to search
+     * @param depTime the desired departure time
+     */
     private static void selectJourneyByDepartureTime(ListView<Journey> listView, List<Journey> journeys, LocalTime depTime) {
         Journey selectedJourney = null;
 
@@ -125,16 +151,18 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
     }
 
     /**
-     * Returns an observable value containing the selected journey.
+     * Returns an observable value containing the currently selected journey.
      *
-     * @return the selected journey
+     * @return the selected journey as an observable value
      */
     public ObservableValue<Journey> selectedJourney() {
         return selectedJourneyO;
     }
 
     /**
-     * ListCell implementation for displaying a journey.
+     * A custom {@link ListCell} implementation for displaying a journey in the list view.
+     * Each cell displays details about the journey, including the vehicle type, departure and
+     * arrival times, duration, and a graphical representation of the journey's stops and transfers.
      */
     private static class JourneyCell extends ListCell<Journey> {
         private final BorderPane cellRoot;
@@ -148,6 +176,9 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
         private final HBox durationBox;
         private final Text durationText;
 
+        /**
+         * Constructs a new {@code JourneyCell} and initializes its graphical components.
+         */
         public JourneyCell() {
             // Create route box (top)
             vehicleIcon = new ImageView();
@@ -195,6 +226,12 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
             setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
         }
 
+        /**
+         * Updates the content of this cell to display the specified journey.
+         *
+         * @param journey the journey to display, or {@code null} if the cell is empty
+         * @param empty whether this cell is empty
+         */
         @Override
         protected void updateItem(Journey journey, boolean empty) {
             super.updateItem(journey, empty);
@@ -236,6 +273,11 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
             setGraphic(cellRoot);
         }
 
+        /**
+         * Updates the graphical representation of the journey's stops and transfers.
+         *
+         * @param journey the journey to display
+         */
         private void updateJourneyLine(Journey journey) {
             journeyLinePane.getChildren().clear();
 
@@ -284,20 +326,35 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
     }
 
     /**
-     * Custom pane that positions the line and circles properly when its size changes.
+     * A custom {@link Pane} implementation for positioning the graphical elements of a journey,
+     * including the line and circles representing stops and transfers.
      */
     private static class CustomPane extends Pane {
         private Line line;
         private Group circleGroup;
 
+        /**
+         * Sets the line representing the journey.
+         *
+         * @param line the line to set
+         */
         public void setLine(Line line) {
             this.line = line;
         }
 
+        /**
+         * Sets the group of circles representing stops and transfers.
+         *
+         * @param circleGroup the group of circles to set
+         */
         public void setCircleGroup(Group circleGroup) {
             this.circleGroup = circleGroup;
         }
 
+        /**
+         * Lays out the graphical elements of the journey, positioning the line and circles
+         * based on the pane's size and the relative positions of the stops and transfers.
+         */
         @Override
         protected void layoutChildren() {
             super.layoutChildren();
@@ -343,3 +400,4 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
         }
     }
 }
+

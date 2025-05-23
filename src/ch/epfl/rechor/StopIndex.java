@@ -6,8 +6,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * A searchable registry of transit locations that provides functionality for finding stations by name.
- * The search functionality is designed to be both case-insensitive and accent-insensitive.
+ * A searchable index of transit stops that provides functionality for finding stops by name.
+ * The search is designed to be case-insensitive and accent-insensitive, allowing for flexible queries.
+ *
+ * This class is immutable and thread-safe.
  *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
@@ -26,10 +28,11 @@ public final class StopIndex {
     private final Map<String, String> aliasToStopNameMap;
 
     /**
-     * Initializes a new station registry.
+     * Initializes a new stop index.
      *
-     * @param stopNames a collection of official station names to be indexed
-     * @param stopAliases a mapping from synonym names to their corresponding official names
+     * @param stopNames a list of official stop names to be indexed.
+     * @param stopAliases a mapping of alias names to their corresponding official stop names.
+     *                    Alias names are treated as equivalent to their official names during searches.
      */
     public StopIndex(List<String> stopNames, Map<String, String> stopAliases) {
         this.stopNames = new ArrayList<>(stopNames);
@@ -37,11 +40,13 @@ public final class StopIndex {
     }
 
     /**
-     * Retrieves stations that correspond to the provided search term.
+     * Searches for stops that match the given search term.
      *
-     * @param searchTerm the input string to search for, which will be divided by spaces into search tokens
-     * @param resultLimit the upper bound on number of results to return
-     * @return a list of station names that match the search criteria, ordered by relevance score in descending order
+     * @param searchTerm the input string to search for. The term is split into tokens by spaces.
+     * @param resultLimit the maximum number of results to return. Must be positive.
+     * @return a list of stop names matching the search term, sorted by relevance in descending order.
+     *         The list contains no duplicates and is limited to {@code resultLimit} entries.
+     * @throws IllegalArgumentException if {@code resultLimit} is not positive.
      */
     public List<String> stopsMatching(String searchTerm, int resultLimit) {
         if (resultLimit <= 0) {
@@ -126,7 +131,11 @@ public final class StopIndex {
     }
 
     /**
-     * Calculates the overall relevance value of a station name based on the provided search tokens.
+     * Computes the relevance score of a stop name based on the provided search tokens.
+     *
+     * @param stopName the name of the stop to evaluate.
+     * @param searchTokens the tokens derived from the search term.
+     * @return the relevance score of the stop name. A higher score indicates a better match.
      */
     private int computeRelevance(String stopName, String[] searchTokens) {
         int aggregateScore = 0;
@@ -143,7 +152,11 @@ public final class StopIndex {
     }
 
     /**
-     * Evaluates the match quality for a single search token.
+     * Evaluates the match quality of a single search token against a stop name.
+     *
+     * @param stopName the name of the stop to evaluate.
+     * @param token the search token to match.
+     * @return the relevance score for the token match. A score of 0 indicates no match.
      */
     private int evaluateTokenMatch(String stopName, String token) {
         Pattern matchPattern = createPatternForToken(token);
@@ -192,7 +205,10 @@ public final class StopIndex {
     }
 
     /**
-     * Generates a search pattern for a token with special handling for accented characters.
+     * Creates a regular expression pattern for a search token, handling accented characters.
+     *
+     * @param token the search token to convert into a pattern.
+     * @return a {@link Pattern} that matches the token, including its accented variants.
      */
     private Pattern createPatternForToken(String token) {
         // Build regex with character classes for accented letters

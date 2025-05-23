@@ -7,11 +7,28 @@ import ch.epfl.rechor.timetable.TimeTable;
 
 import java.time.LocalDate;
 
+/**
+ * Represents a router capable of calculating the profile of all optimal journeys
+ * to reach a given destination stop on a specific day using the Connection Scan Algorithm (CSA).
+ * <p>
+ * The algorithm iteratively updates Pareto fronts for trips and stations to determine
+ * the optimal journeys based on criteria such as arrival time and number of transfers.
+ *
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
+ */
 public record Router(TimeTable timeTable) {
 
     // Constant for "not walkable" sentinel value
     private static final int WALKABLE_DISTANCE_NOT_FOUND = -1;
 
+    /**
+     * Computes the profile of all optimal journeys to a given destination stop on a specific date.
+     *
+     * @param date              the date for which the journeys are calculated
+     * @param destinationStopId the ID of the destination stop
+     * @return the profile containing the Pareto fronts of optimal journeys
+     */
     public Profile profile(LocalDate date, int destinationStopId) {
         Profile.Builder profile = new Profile.Builder(
                 timeTable, date, timeTable.stationId(destinationStopId));
@@ -69,7 +86,17 @@ public record Router(TimeTable timeTable) {
         return profile.build();
     }
 
-    private void updateStation(int depStationId, int depmins, Profile.Builder profile,
+    /**
+     * Updates the Pareto front of a station based on the given connection and its associated Pareto front.
+     *
+     * @param depStationId the ID of the departure station
+     * @param depMins      the departure time in minutes
+     * @param profile      the profile being updated
+     * @param connectionId the ID of the current connection
+     * @param pareto       the Pareto front of the current connection
+     * @param connections  the connections data
+     */
+    private void updateStation(int depStationId, int depMins, Profile.Builder profile,
                                int connectionId, ParetoFront.Builder pareto, Connections connections) {
         int transfersRange = timeTable.transfers().arrivingAt(depStationId);
 
@@ -77,7 +104,7 @@ public record Router(TimeTable timeTable) {
              transferIndice < PackedRange.endExclusive(transfersRange); transferIndice++) {
 
             int transferDepStationId = timeTable.transfers().depStationId(transferIndice);
-            int departureTime = depmins - timeTable.transfers().minutes(transferIndice);
+            int departureTime = depMins - timeTable.transfers().minutes(transferIndice);
 
             ParetoFront.Builder stationFront = profile.forStation(transferDepStationId);
             if (stationFront == null) {
@@ -100,6 +127,12 @@ public record Router(TimeTable timeTable) {
         }
     }
 
+    /**
+     * Retrieves the walkable distance for each station from the given destination stop ID.
+     *
+     * @param destinationStopId the ID of the destination stop
+     * @return an array containing the walkable distances for each station
+     */
     private int[] getWalkableDistance(int destinationStopId) {
         int[] walkableDistance = new int[timeTable.stations().size()];
         for (int i = 0; i < timeTable.stations().size(); i++) {
