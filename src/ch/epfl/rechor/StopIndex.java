@@ -16,12 +16,8 @@ import java.util.stream.Collectors;
  */
 public final class StopIndex {
     // Constants for magic numbers
-    private static final int SINGLE_CHAR_MINIMUM_THRESHOLD = 100;
     private static final int WORD_START_BONUS = 4;
     private static final int WORD_END_BONUS = 2;
-    private static final int EXACT_MATCH_BONUS = 10;
-    private static final int SHORT_NAME_BONUS = 5;
-    private static final int NON_INITIAL_PENALTY_DIVISOR = 10;
     private static final int PERCENTAGE_MULTIPLIER = 100;
 
     private final List<String> stopNames;
@@ -144,23 +140,6 @@ public final class StopIndex {
         if (endsWord) {
             weightMultiplier *= WORD_END_BONUS;
         }
-
-        // For single-character searches, boost exact word matches and penalize non-initial matches
-        if (token.length() == 1) {
-            // Exact matches (like just "L" as a station name) get boosted
-            if (stopName.equals(token)) {
-                weightMultiplier *= EXACT_MATCH_BONUS;
-            }
-            // Stations that just start with the letter get a moderate boost
-            else if (textMatcher.start() == 0 && stopName.length() <= 3) {
-                weightMultiplier *= SHORT_NAME_BONUS;
-            }
-            // Non-initial matches get penalized heavily
-            else if (textMatcher.start() > 0) {
-                weightMultiplier /= NON_INITIAL_PENALTY_DIVISOR; // Dramatically reduce relevance for non-initial matches
-            }
-        }
-
         return baseRelevance * weightMultiplier;
     }
 
