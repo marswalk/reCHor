@@ -166,11 +166,14 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
      */
     private static class JourneyCell extends ListCell<Journey> {
         private final BorderPane cellRoot;
+        private final HBox routeBox;
         private final ImageView vehicleIcon;
         private final Text routeText;
+        private final HBox departureBox;
         private final Text departureText;
         private final CustomPane journeyLinePane;
         private final Text arrivalText;
+        private final HBox durationBox;
         private final Text durationText;
 
         /**
@@ -185,13 +188,13 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
 
             routeText = new Text();
 
-            HBox routeBox = new HBox(5, vehicleIcon, routeText);
+            routeBox = new HBox(5, vehicleIcon, routeText);
             routeBox.setAlignment(Pos.CENTER_LEFT);
             routeBox.getStyleClass().add("route");
 
             // Create departure box (left)
             departureText = new Text();
-            HBox departureBox = new HBox(departureText);
+            departureBox = new HBox(departureText);
             departureBox.getStyleClass().add("departure");
             departureBox.setAlignment(Pos.CENTER);
 
@@ -204,7 +207,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
 
             // Create duration box (bottom)
             durationText = new Text();
-            HBox durationBox = new HBox(durationText);
+            durationBox = new HBox(durationText);
             durationBox.setAlignment(Pos.CENTER);
             durationBox.getStyleClass().add("duration");
 
