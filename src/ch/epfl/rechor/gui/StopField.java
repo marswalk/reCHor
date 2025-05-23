@@ -19,7 +19,7 @@ import java.util.List;
  * This component provides an auto-completion feature by displaying a popup with matching stops
  * as the user types. Users can navigate the suggestions using the keyboard and select a stop.
  * </p>
- * 
+ *
  * <h2>Features:</h2>
  * <ul>
  *   <li>Displays a popup with up to 30 matching stops based on user input.</li>
@@ -27,18 +27,21 @@ import java.util.List;
  *   <li>Automatically updates the selected stop when the field loses focus.</li>
  *   <li>Supports swapping of stop names programmatically.</li>
  * </ul>
- * 
+ *
  * @param textField the text field used for input and display
  * @param stopO     an observable value containing the selected stop name
- * 
+ *
  * @see javafx.scene.control.TextField
  * @see javafx.stage.Popup
  * @see javafx.scene.control.ListView
- * 
+ *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
  */
 public record StopField(TextField textField, ObservableValue<String> stopO) {
+
+    /** The maximum number of matching stops to display in the popup. */
+    private static final int MAX_RESULTS = 30;
 
     /**
      * Creates a new stop field using the provided stop index for searching stops.
@@ -165,7 +168,7 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
      * Updates the search results list based on the current query.
      * <p>
      * This method searches for stops matching the query and updates the popup list
-     * with the top 30 results. The first result is selected by default.
+     * with the top MAX_RESULTS results. The first result is selected by default.
      * </p>
      *
      * @param query      the search query entered by the user
@@ -174,7 +177,7 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
      */
     private static void updateSearchResults(String query, StopIndex stopIndex, ListView<String> resultList) {
         // Search for stops and update the list
-        List<String> matchingStops = stopIndex.stopsMatching(query, 30);
+        List<String> matchingStops = stopIndex.stopsMatching(query, MAX_RESULTS);
         resultList.getItems().setAll(matchingStops);
 
         // Select the first result if there are any
