@@ -47,6 +47,11 @@ import java.util.List;
  */
 public record DetailUI(Node rootNode) {
 
+    // Constants defined according to the specification
+    private static final int CIRCLE_RADIUS = 3;
+    private static final int VEHICLE_ICON_SIZE = 31;
+    private static final int LINE_WIDTH = 2;
+
     /**
      * Creates a new instance of {@code DetailUI} for the given observable journey.
      * <p>
@@ -170,7 +175,7 @@ public record DetailUI(Node rootNode) {
 
                 Line line = new Line(startX, startY, endX, endY);
                 line.setStroke(Color.RED);
-                line.setStrokeWidth(2);
+                line.setStrokeWidth(LINE_WIDTH);
 
                 annotationsPane.getChildren().add(line);
             }
@@ -203,7 +208,7 @@ public record DetailUI(Node rootNode) {
                 depTimeText.getStyleClass().add("departure");
                 GridPane.setHalignment(depTimeText, HPos.RIGHT);
 
-                Circle depCircle = new Circle(3);
+                Circle depCircle = new Circle(CIRCLE_RADIUS);
                 depCircle.setStroke(Color.BLACK);
 
                 Text depStopText = new Text(transportLeg.depStop().name());
@@ -222,8 +227,8 @@ public record DetailUI(Node rootNode) {
 
                 // Vehicle icon and route destination
                 ImageView vehicleIcon = new ImageView(VehicleIcons.iconFor(transportLeg.vehicle()));
-                vehicleIcon.setFitWidth(31);
-                vehicleIcon.setFitHeight(31);
+                vehicleIcon.setFitWidth(VEHICLE_ICON_SIZE);
+                vehicleIcon.setFitHeight(VEHICLE_ICON_SIZE);
                 GridPane.setHalignment(vehicleIcon, HPos.CENTER);
                 GridPane.setValignment(vehicleIcon, VPos.CENTER);
 
@@ -277,7 +282,7 @@ public record DetailUI(Node rootNode) {
                 Text arrTimeText = new Text(FormatterFr.formatTime(transportLeg.arrTime()));
                 GridPane.setHalignment(arrTimeText, HPos.RIGHT);
 
-                Circle arrCircle = new Circle(3);
+                Circle arrCircle = new Circle(CIRCLE_RADIUS);
                 arrCircle.setStroke(Color.BLACK);
 
                 Text arrStopText = new Text(transportLeg.arrStop().name());

@@ -35,7 +35,7 @@ public final class Submit {
     private static final String TOKEN_2 = "ha2Ifai2";
     // Noms des éventuels fichiers Java additionnels à inclure (p.ex. "MyClass.java")
     private static final List<String> ADDITIONAL_FILES =
-            List.of();
+            List.of("src/ch/epfl/Bonus.java");
     // -------------
 
     private static final String ZIP_ENTRY_NAME_PREFIX = "CS108/";
