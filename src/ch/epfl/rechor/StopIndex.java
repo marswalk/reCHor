@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 /**
  * A searchable index of transit stops that provides functionality for finding stops by name.
  * The search is designed to be case-insensitive and accent-insensitive, allowing for flexible queries.
- *
+ * <p>
  * This class is immutable and thread-safe.
  *
  * @author Guanting Wen (392412)
@@ -69,7 +69,7 @@ public final class StopIndex {
 
         List<RankedStop> rankedResults = new ArrayList<>();
         // Process all stop names including aliases
-        List<String> allStopNames = new ArrayList(stopNames);
+        List<String> allStopNames = new ArrayList<>(stopNames);
         allStopNames.addAll(aliasToStopNameMap.keySet());
 
         for (String stopName : allStopNames) {
@@ -80,46 +80,6 @@ public final class StopIndex {
                 rankedResults.add(new RankedStop(officialStopName, relevance));
             }
         }
-
-        // For single-character searches, require at least a high match relevance
-        // This helps prevent irrelevant results when typing just one letter
-        if (searchTerm.trim().length() == 1) {
-            int minimumThreshold = SINGLE_CHAR_MINIMUM_THRESHOLD;
-            // rankedResults.removeIf(entry -> entry < minimumThreshold);
-        }
-
-        // Custom comparator that implements the specific ordering rules
-        Comparator<String> customComparator = (a, b) -> {
-            // First compare by relevance (descending order)
-            // int relevanceComparison = Integer.compare(scores.get(b), scores.get(a));
-            //if (relevanceComparison != 0) {
-            //     return relevanceComparison;
-            // }
-
-            // Get the base names (before any comma or space)
-            String baseA = a.split("[, ]")[0];
-            String baseB = b.split("[, ]")[0];
-
-            // If base names are different, compare them
-            int baseComparison = baseA.compareToIgnoreCase(baseB);
-            if (baseComparison != 0) {
-                return baseComparison;
-            }
-
-            // If base names are the same:
-            // 1. Names with comma come before names without comma
-            boolean aHasComma = a.contains(",");
-            boolean bHasComma = b.contains(",");
-
-            if (aHasComma && !bHasComma) {
-                return -1;
-            } else if (!aHasComma && bHasComma) {
-                return 1;
-            }
-
-            // 2. If both have or don't have commas, sort alphabetically
-            return a.compareToIgnoreCase(b);
-        };
 
         // Return sorted results
         return rankedResults.stream()

@@ -52,7 +52,6 @@ import java.util.*;
  */
 public class Main extends Application {
 
-    private ObservableValue<List<Journey>> journeysObservable;
     private TimeTable timeTable;
     private Router router;
     private Profile lastProfile;
@@ -108,41 +107,45 @@ public class Main extends Application {
             QueryUI queryUI = QueryUI.create(stopIndex);
 
             // Create observable that provides journeys based on query parameters
-            journeysObservable = Bindings.createObjectBinding(
-                () -> {
-                    String depStop = queryUI.depStopO().getValue();
-                    String arrStop = queryUI.arrStopO().getValue();
-                    LocalDate date = queryUI.dateO().getValue();
+            // If any required values are missing, return empty list
+            // Find station IDs
+            // Reuse previous profile if possible
+            // Extract journeys for the departure station
+            ObservableValue<List<Journey>> journeysObservable = Bindings.createObjectBinding(
+                    () -> {
+                        String depStop = queryUI.depStopO().getValue();
+                        String arrStop = queryUI.arrStopO().getValue();
+                        LocalDate date = queryUI.dateO().getValue();
 
-                    // If any required values are missing, return empty list
-                    if (depStop == null || depStop.isEmpty() ||
-                        arrStop == null || arrStop.isEmpty() ||
-                        date == null) {
-                        return Collections.emptyList();
-                    }
+                        // If any required values are missing, return empty list
+                        if (depStop == null || depStop.isEmpty() ||
+                                arrStop == null || arrStop.isEmpty() ||
+                                date == null) {
+                            return Collections.emptyList();
+                        }
 
-                    // Find station IDs
-                    int depStationId = findStationId(depStop);
-                    int arrStationId = findStationId(arrStop);
+                        // Find station IDs
+                        int depStationId = findStationId(depStop);
+                        int arrStationId = findStationId(arrStop);
 
-                    if (depStationId < 0 || arrStationId < 0) {
-                        return Collections.emptyList();
-                    }
+                        if (depStationId < 0 || arrStationId < 0) {
+                            return Collections.emptyList();
+                        }
 
-                    // Reuse previous profile if possible
-                    if (lastProfile == null ||
-                        !Objects.equals(lastDestination, arrStop) ||
-                        !Objects.equals(lastDate, date)) {
+                        // Reuse previous profile if possible
+                        if (lastProfile == null ||
+                                !Objects.equals(lastDestination, arrStop) ||
+                                !Objects.equals(lastDate, date)) {
 
-                        lastProfile = router.profile(date, arrStationId);
-                        lastDestination = arrStop;
-                        lastDate = date;
-                    }
+                            lastProfile = router.profile(date, arrStationId);
+                            lastDestination = arrStop;
+                            lastDate = date;
+                        }
 
-                    // Extract journeys for the departure station
-                    return JourneyExtractor.journeys(lastProfile, depStationId);
-                },
-                queryUI.depStopO(), queryUI.arrStopO(), queryUI.dateO()
+                        // Extract journeys for the departure station
+                        return JourneyExtractor.journeys(lastProfile, depStationId);
+                    },
+                    queryUI.depStopO(), queryUI.arrStopO(), queryUI.dateO()
             );
 
             // Create summary and detail views
