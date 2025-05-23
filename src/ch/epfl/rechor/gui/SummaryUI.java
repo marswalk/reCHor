@@ -184,7 +184,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
 
             routeText = new Text();
 
-            routeBox = new HBox(5, vehicleIcon, routeText);
+            routeBox = new HBox(vehicleIcon, routeText);
             routeBox.setAlignment(Pos.CENTER_LEFT);
             routeBox.getStyleClass().add("route");
 
@@ -215,9 +215,6 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
             cellRoot.setCenter(journeyLinePane);
             cellRoot.setRight(arrivalText);
             cellRoot.setBottom(durationBox);
-
-            BorderPane.setMargin(departureBox, new Insets(0, 10, 0, 0));
-            BorderPane.setMargin(arrivalText, new Insets(0, 0, 0, 10));
 
             setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
         }
