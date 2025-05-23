@@ -8,11 +8,20 @@ import java.util.stream.Collectors;
 /**
  * A searchable registry of transit locations that provides functionality for finding stations by name.
  * The search functionality is designed to be both case-insensitive and accent-insensitive.
- * 
+ *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
  */
 public final class StopIndex {
+    // Constants for magic numbers
+    private static final int SINGLE_CHAR_MINIMUM_THRESHOLD = 100;
+    private static final int WORD_START_BONUS = 4;
+    private static final int WORD_END_BONUS = 2;
+    private static final int EXACT_MATCH_BONUS = 10;
+    private static final int SHORT_NAME_BONUS = 5;
+    private static final int NON_INITIAL_PENALTY_DIVISOR = 10;
+    private static final int PERCENTAGE_MULTIPLIER = 100;
+
     private final List<String> stopNames;
     private final Map<String, String> aliasToStopNameMap;
 
@@ -70,17 +79,17 @@ public final class StopIndex {
         // For single-character searches, require at least a high match relevance
         // This helps prevent irrelevant results when typing just one letter
         if (searchTerm.trim().length() == 1) {
-            int minimumThreshold = 100; // The relevance needs to be substantial to include
+            int minimumThreshold = SINGLE_CHAR_MINIMUM_THRESHOLD;
             // rankedResults.removeIf(entry -> entry < minimumThreshold);
         }
 
         // Custom comparator that implements the specific ordering rules
         Comparator<String> customComparator = (a, b) -> {
             // First compare by relevance (descending order)
-           // int relevanceComparison = Integer.compare(scores.get(b), scores.get(a));
+            // int relevanceComparison = Integer.compare(scores.get(b), scores.get(a));
             //if (relevanceComparison != 0) {
-           //     return relevanceComparison;
-           // }
+            //     return relevanceComparison;
+            // }
 
             // Get the base names (before any comma or space)
             String baseA = a.split("[, ]")[0];
@@ -128,7 +137,6 @@ public final class StopIndex {
             }
             aggregateScore += tokenScore;
         }
-
         return aggregateScore;
     }
 
@@ -145,7 +153,7 @@ public final class StopIndex {
 
         // Calculate base relevance (percentage of characters matched)
         int matchLength = textMatcher.end() - textMatcher.start();
-        int baseRelevance = matchLength * 100 / stopName.length();
+        int baseRelevance = matchLength * PERCENTAGE_MULTIPLIER / stopName.length();
 
         // Apply bonuses for word boundaries
         int weightMultiplier = 1;
@@ -153,28 +161,28 @@ public final class StopIndex {
         // Check if the match is at the beginning of a word
         boolean startsWord = textMatcher.start() == 0 || !Character.isLetter(stopName.charAt(textMatcher.start() - 1));
         if (startsWord) {
-            weightMultiplier *= 4;
+            weightMultiplier *= WORD_START_BONUS;
         }
 
         // Check if the match is at the end of a word
         boolean endsWord = textMatcher.end() == stopName.length() || !Character.isLetter(stopName.charAt(textMatcher.end()));
         if (endsWord) {
-            weightMultiplier *= 2;
+            weightMultiplier *= WORD_END_BONUS;
         }
 
         // For single-character searches, boost exact word matches and penalize non-initial matches
         if (token.length() == 1) {
             // Exact matches (like just "L" as a station name) get boosted
             if (stopName.equals(token)) {
-                weightMultiplier *= 10;
+                weightMultiplier *= EXACT_MATCH_BONUS;
             }
             // Stations that just start with the letter get a moderate boost
             else if (textMatcher.start() == 0 && stopName.length() <= 3) {
-                weightMultiplier *= 5;
+                weightMultiplier *= SHORT_NAME_BONUS;
             }
             // Non-initial matches get penalized heavily
             else if (textMatcher.start() > 0) {
-                weightMultiplier /= 10; // Dramatically reduce relevance for non-initial matches
+                weightMultiplier /= NON_INITIAL_PENALTY_DIVISOR; // Dramatically reduce relevance for non-initial matches
             }
         }
 
