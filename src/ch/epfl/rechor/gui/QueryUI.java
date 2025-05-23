@@ -4,7 +4,6 @@ import ch.epfl.rechor.StopIndex;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -12,7 +11,6 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
@@ -54,7 +52,7 @@ import java.time.format.DateTimeFormatter;
  * @see javafx.scene.control.TextFormatter
  * 
  * @author Guanting Wen (392412)
-@author Ben Fall (373176)
+ * @author Ben Fall (373176)
  */
 public record QueryUI(
         Node rootNode,
