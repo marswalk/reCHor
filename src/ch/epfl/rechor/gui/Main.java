@@ -52,6 +52,10 @@ import java.util.*;
  */
 public class Main extends Application {
 
+    private static final int MIN_WIDTH = 800;
+    private static final int MIN_HEIGHT = 600;
+    private static final String TIMETABLE_PATH = "timetable/timetable_21";
+
     private ObservableValue<List<Journey>> journeysObservable;
     private TimeTable timeTable;
     private Router router;
@@ -82,7 +86,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         try {
             // Load timetable data
-            timeTable = FileTimeTable.in(Path.of("timetable/timetable_21"));
+            timeTable = FileTimeTable.in(Path.of(TIMETABLE_PATH));
             router = new Router(timeTable);
 
             // Create stop index for search functionality
@@ -164,8 +168,8 @@ public class Main extends Application {
 
             // Configure the primary stage
             primaryStage.setTitle("ReCHor");
-            primaryStage.setMinWidth(800);
-            primaryStage.setMinHeight(600);
+            primaryStage.setMinWidth(MIN_WIDTH);
+            primaryStage.setMinHeight(MIN_HEIGHT);
             primaryStage.setScene(scene);
             primaryStage.show();
 

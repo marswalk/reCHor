@@ -42,6 +42,7 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
 
     /** The maximum number of matching stops to display in the popup. */
     private static final int MAX_RESULTS = 30;
+    private static final double MAX_POPUP_HEIGHT = 240.0;
 
     /**
      * Creates a new stop field using the provided stop index for searching stops.
@@ -62,7 +63,7 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
 
         // Configure the results list view
         resultList.setFocusTraversable(false);
-        resultList.setMaxHeight(240);
+        resultList.setMaxHeight(MAX_POPUP_HEIGHT);
         popup.getContent().add(resultList);
         popup.setHideOnEscape(false);
         // Don't auto-hide, we'll manage visibility based on focus
