@@ -47,8 +47,7 @@ import java.util.*;
  * @see Router
  * @see JourneyExtractor
  *
- * @author Guanting Wen (392412)
- * @author Ben Fall (373176)
+ * 
  */
 public class Main extends Application {
 
@@ -118,10 +117,11 @@ public class Main extends Application {
                     String arrStop = queryUI.arrStopO().getValue();
                     LocalDate date = queryUI.dateO().getValue();
 
-                    // If any required values are missing, return empty list
-                    if (depStop == null || depStop.isEmpty() ||
-                        arrStop == null || arrStop.isEmpty() ||
-                        date == null) {
+                    // Skip if identical or incomplete
+                    if (depStop == null || depStop.isEmpty()
+                        || arrStop == null || arrStop.isEmpty()
+                        || date == null
+                        || depStop.equals(arrStop)) {
                         return Collections.emptyList();
                     }
 
@@ -150,7 +150,12 @@ public class Main extends Application {
             );
 
             // Create summary and detail views
-            SummaryUI summaryUI = SummaryUI.create(journeysObservable, queryUI.timeO());
+            SummaryUI summaryUI = SummaryUI.create(
+                    journeysObservable,
+                    queryUI.timeO(),
+                    queryUI.depStopO(),
+                    queryUI.arrStopO()
+            );
             DetailUI detailUI = DetailUI.create(summaryUI.selectedJourney());
 
             // Create the split pane containing summary and detail

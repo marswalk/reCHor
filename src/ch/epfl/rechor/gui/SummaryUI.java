@@ -12,10 +12,12 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
@@ -24,16 +26,17 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Represents the graphical user interface component that provides an overview of all journeys
  * for a given day. This component displays a list of journeys with details such as departure time,
  * arrival time, duration, and transfer points.
- * 
+ *
  * <p>The journeys are displayed in a {@link ListView}, where each journey is represented by a custom
  * cell. The list is sorted by departure time, and the first journey departing at or after the desired
  * departure time is automatically selected.</p>
- * 
+ *
  * <p>The graphical representation of each journey includes:</p>
  * <ul>
  *   <li>An icon representing the type of vehicle for the first transport leg.</li>
@@ -41,10 +44,10 @@ import java.util.List;
  *   <li>A graphical line with circles indicating stops and transfers.</li>
  *   <li>The total duration of the journey.</li>
  * </ul>
- * 
+ *
  * <p>This class is part of the ReCHor project and is used to display the second main section of the
  * graphical interface, as described in the project specifications.</p>
- * 
+ *
  * @param rootNode the root node of the scene graph
  * @param selectedJourneyO an observable value containing the currently selected journey
  * @see javafx.scene.control.ListView
@@ -57,6 +60,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
     private static final int ICON_SIZE = 20;
     private static final int LINE_MARGIN = 5;
     private static final int CIRCLE_RADIUS = 3;
+    private static final Random RANDOM = new Random();
 
     /**
      * Creates a new {@code SummaryUI} instance that displays a list of journeys and allows
@@ -64,9 +68,12 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
      *
      * @param journeysO an observable value containing the list of journeys to display
      * @param depTimeO an observable value containing the desired departure time
+     * @param depStopO an observable value containing the departure stop
+     * @param arrStopO an observable value containing the arrival stop
      * @return a new {@code SummaryUI} instance
      */
-    public static SummaryUI create(ObservableValue<List<Journey>> journeysO, ObservableValue<LocalTime> depTimeO) {
+    public static SummaryUI create(ObservableValue<List<Journey>> journeysO, ObservableValue<LocalTime> depTimeO, ObservableValue<String> depStopO, ObservableValue<String> arrStopO) {
+        BorderPane container = new BorderPane();
         ListView<Journey> journeyListView = new ListView<>();
         journeyListView.getStylesheets().add("/summary.css");
         journeyListView.setCellFactory(param -> new JourneyCell());
@@ -98,12 +105,26 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
             }
         }
 
+        // Observe changes in depStopO or arrStopO and update container accordingly
+        Runnable updateView = () -> {
+            String dep = depStopO.getValue();
+            String arr = arrStopO.getValue();
+            if (dep != null && arr != null && dep.equals(arr) && !dep.isEmpty()) {
+                container.setCenter(createIdenticalStopsView());
+            } else {
+                container.setCenter(journeyListView);
+            }
+        };
+        depStopO.subscribe(s -> updateView.run());
+        arrStopO.subscribe(s -> updateView.run());
+        updateView.run();
+
         // Create observable value for selected journey
         ObjectProperty<Journey> selectedJourneyProperty = new SimpleObjectProperty<>();
         journeyListView.getSelectionModel().selectedItemProperty().subscribe(
                 selectedJourneyProperty::set);
 
-        return new SummaryUI(journeyListView, selectedJourneyProperty);
+        return new SummaryUI(container, selectedJourneyProperty);
     }
 
     /**
@@ -392,5 +413,20 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
             }
         }
     }
-}
 
+    private static Node createIdenticalStopsView() {
+        VBox view = new VBox(10);
+        view.setAlignment(Pos.CENTER);
+        // Randomly pick between frau.jpg and mann.jpg
+        String imageName = RANDOM.nextBoolean() ? "frau.jpg" : "mann.jpg";
+        Image image = new Image("/" + imageName);
+        ImageView imageView = new ImageView(image);
+        imageView.setFitHeight(150);
+        imageView.setPreserveRatio(true);
+
+        Text message = new Text("Departure and destination are identical.");
+
+        view.getChildren().addAll(imageView, message);
+        return view;
+    }
+}
