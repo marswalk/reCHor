@@ -28,3 +28,17 @@
     -fx-fill: white;
     -fx-stroke-width: 1.5;
 }
+
+/* Date header styles */
+.date-header {
+    -fx-font-weight: bold;
+    -fx-padding: 8px 4px;
+    -fx-background-color: #f0f0f0;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.date-header-cell {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}

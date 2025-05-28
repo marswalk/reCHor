@@ -5,11 +5,13 @@ import ch.epfl.rechor.journey.Journey;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
@@ -23,10 +25,14 @@ import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Function;
 
 /**
  * Represents the graphical user interface component that provides an overview of all journeys
@@ -61,7 +67,28 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
     private static final int LINE_MARGIN = 5;
     private static final int CIRCLE_RADIUS = 3;
     private static final Random RANDOM = new Random();
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy");
 
+    /**
+     * Sealed interface for items that can be displayed in the journey list.
+     */
+    private sealed interface ListItem {
+        /**
+         * Represents a journey item in the list.
+         */
+        record JourneyItem(Journey journey) implements ListItem {}
+        
+        /**
+         * Represents a date header in the list.
+         */
+        record DateHeader(LocalDate date) implements ListItem {}
+        
+        /**
+         * Represents a button to load more journeys.
+         */
+        record LoadMoreButton(boolean isPrevious, LocalDate referenceDate) implements ListItem {}
+    }
+    
     /**
      * Creates a new {@code SummaryUI} instance that displays a list of journeys and allows
      * the user to select a journey.
@@ -74,37 +101,217 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
      */
     public static SummaryUI create(ObservableValue<List<Journey>> journeysO, ObservableValue<LocalTime> depTimeO, ObservableValue<String> depStopO, ObservableValue<String> arrStopO) {
         BorderPane container = new BorderPane();
-        ListView<Journey> journeyListView = new ListView<>();
+        ListView<ListItem> journeyListView = new ListView<>();
         journeyListView.getStylesheets().add("/summary.css");
-        journeyListView.setCellFactory(param -> new JourneyCell());
-
-        // Bind the journey list to the list view
-        journeysO.subscribe((newJourneys) -> {
-            journeyListView.getItems().setAll(newJourneys);
-
-            // Select appropriate journey based on departure time
-            if (newJourneys != null && !newJourneys.isEmpty()) {
-                LocalTime currentDepTime = depTimeO.getValue();
-                selectJourneyByDepartureTime(journeyListView, newJourneys, currentDepTime);
+        
+        // Create observable property for selected journey
+        ObjectProperty<Journey> selectedJourneyProperty = new SimpleObjectProperty<>();
+        
+        // Keep track of loaded dates
+        List<LocalDate> loadedDates = new ArrayList<>();
+        
+        // Function to load journeys for a specific date
+        Function<LocalDate, List<Journey>> loadJourneysForDate = (date) -> {
+            // In a real implementation, this would query a service or repository
+            // For now, we'll simulate by using the same journeys but with adjusted dates
+            List<Journey> baseJourneys = journeysO.getValue();
+            if (baseJourneys == null || baseJourneys.isEmpty()) {
+                return List.of();
+            }
+            
+            // Adjust dates of journeys to match the requested date
+            List<Journey> adjustedJourneys = new ArrayList<>();
+            LocalDate currentDate = baseJourneys.get(0).depTime().toLocalDate();
+            for (Journey journey : baseJourneys) {
+                // Calculate the time difference in days
+                long daysDifference = date.toEpochDay() - currentDate.toEpochDay();
+                
+                // Create new legs with adjusted dates
+                List<Journey.Leg> adjustedLegs = new ArrayList<>();
+                for (Journey.Leg leg : journey.legs()) {
+                    if (leg instanceof Journey.Leg.Transport transport) {
+                        // Adjust transport leg dates
+                        LocalDateTime adjustedDepTime = transport.depTime().plusDays(daysDifference);
+                        LocalDateTime adjustedArrTime = transport.arrTime().plusDays(daysDifference);
+                        
+                        // Adjust intermediate stops
+                        List<Journey.Leg.IntermediateStop> adjustedStops = new ArrayList<>();
+                        for (Journey.Leg.IntermediateStop stop : transport.intermediateStops()) {
+                            adjustedStops.add(new Journey.Leg.IntermediateStop(
+                                    stop.stop(),
+                                    stop.arrTime().plusDays(daysDifference),
+                                    stop.depTime().plusDays(daysDifference)
+                            ));
+                        }
+                        
+                        adjustedLegs.add(new Journey.Leg.Transport(
+                                transport.depStop(),
+                                adjustedDepTime,
+                                transport.arrStop(),
+                                adjustedArrTime,
+                                adjustedStops,
+                                transport.vehicle(),
+                                transport.route(),
+                                transport.destination()
+                        ));
+                    } else if (leg instanceof Journey.Leg.Foot foot) {
+                        // Adjust foot leg dates
+                        LocalDateTime adjustedDepTime = foot.depTime().plusDays(daysDifference);
+                        LocalDateTime adjustedArrTime = foot.arrTime().plusDays(daysDifference);
+                        
+                        adjustedLegs.add(new Journey.Leg.Foot(
+                                foot.depStop(),
+                                adjustedDepTime,
+                                foot.arrStop(),
+                                adjustedArrTime
+                        ));
+                    }
+                }
+                
+                adjustedJourneys.add(new Journey(adjustedLegs));
+            }
+            
+            return adjustedJourneys;
+        };
+        
+        // Set up the cell factory to display different types of items
+        journeyListView.setCellFactory(listView -> new ListCell<>() {
+            private final JourneyCell journeyCell = new JourneyCell();
+            private final Button loadMoreButton = new Button();
+            private final Text dateHeaderText = new Text();
+            private final BorderPane dateHeaderPane = new BorderPane(dateHeaderText);
+            
+            {
+                loadMoreButton.getStyleClass().add("load-more-button");
+                dateHeaderPane.getStyleClass().add("date-header");
+                this.getStyleClass().add("date-header-cell");
+            }
+            
+            @Override
+            protected void updateItem(ListItem item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                if (empty || item == null) {
+                    setGraphic(null);
+                    return;
+                }
+                
+                if (item instanceof ListItem.JourneyItem journeyItem) {
+                    journeyCell.updateItem(journeyItem.journey(), false);
+                    setGraphic(journeyCell.getGraphic());
+                } else if (item instanceof ListItem.DateHeader dateHeader) {
+                    dateHeaderText.setText(DATE_FORMATTER.format(dateHeader.date()));
+                    setGraphic(dateHeaderPane);
+                } else if (item instanceof ListItem.LoadMoreButton loadMoreBtn) {
+                    if (loadMoreBtn.isPrevious()) {
+                        loadMoreButton.setText("Load Previous Day");
+                    } else {
+                        loadMoreButton.setText("Load Next Day");
+                    }
+                    
+                    // Set up button action
+                    loadMoreButton.setOnAction(event -> {
+                        LocalDate targetDate = loadMoreBtn.isPrevious() 
+                                ? loadMoreBtn.referenceDate().minusDays(1)
+                                : loadMoreBtn.referenceDate().plusDays(1);
+                        
+                        // Load journeys for the target date
+                        List<Journey> newJourneys = loadJourneysForDate.apply(targetDate);
+                        if (!newJourneys.isEmpty()) {
+                            // Add the date to loaded dates
+                            loadedDates.add(targetDate);
+                            
+                            // Create list items with date header
+                            ObservableList<ListItem> items = journeyListView.getItems();
+                            int insertIndex = loadMoreBtn.isPrevious() ? 0 : items.size();
+                            
+                            // Remove the load more button
+                            items.remove(getIndex());
+                            
+                            if (loadMoreBtn.isPrevious()) {
+                                // Add load previous button if needed
+                                items.add(0, new ListItem.LoadMoreButton(true, targetDate));
+                                
+                                // Add date header
+                                items.add(1, new ListItem.DateHeader(targetDate));
+                                
+                                // Add journeys
+                                int index = 2;
+                                for (Journey journey : newJourneys) {
+                                    items.add(index++, new ListItem.JourneyItem(journey));
+                                }
+                            } else {
+                                // Add date header
+                                items.add(new ListItem.DateHeader(targetDate));
+                                
+                                // Add journeys
+                                for (Journey journey : newJourneys) {
+                                    items.add(new ListItem.JourneyItem(journey));
+                                }
+                                
+                                // Add load next button if needed
+                                items.add(new ListItem.LoadMoreButton(false, targetDate));
+                            }
+                        }
+                    });
+                    
+                    setGraphic(loadMoreButton);
+                }
             }
         });
-
+        
+        // Initial population and scroll listener setup
+        journeysO.subscribe((newJourneys) -> {
+            if (newJourneys == null || newJourneys.isEmpty()) {
+                journeyListView.getItems().clear();
+                return;
+            }
+            
+            // Get the current date from journeys
+            LocalDate currentDate = newJourneys.get(0).depTime().toLocalDate();
+            loadedDates.clear();
+            loadedDates.add(currentDate);
+            
+            // Create list items
+            ObservableList<ListItem> items = FXCollections.observableArrayList();
+            
+            // Add load previous button
+            items.add(new ListItem.LoadMoreButton(true, currentDate));
+            
+            // Add date header
+            items.add(new ListItem.DateHeader(currentDate));
+            
+            // Add journeys
+            for (Journey journey : newJourneys) {
+                items.add(new ListItem.JourneyItem(journey));
+            }
+            
+            // Add load next button
+            items.add(new ListItem.LoadMoreButton(false, currentDate));
+            
+            journeyListView.setItems(items);
+            
+            // Select appropriate journey based on departure time
+            if (depTimeO.getValue() != null) {
+                selectJourneyByDepartureTime(journeyListView, newJourneys, depTimeO.getValue());
+            }
+        });
+        
         // When departure time changes, select the appropriate journey
         depTimeO.subscribe((newTime) -> {
             List<Journey> journeys = journeysO.getValue();
-            if (journeys != null && !journeys.isEmpty()) {
+            if (journeys != null && !journeys.isEmpty() && newTime != null) {
                 selectJourneyByDepartureTime(journeyListView, journeys, newTime);
             }
         });
-
-        // Initial population of the list
-        if (journeysO.getValue() != null) {
-            journeyListView.getItems().setAll(journeysO.getValue());
-            if (!journeyListView.getItems().isEmpty() && depTimeO.getValue() != null) {
-                selectJourneyByDepartureTime(journeyListView, journeysO.getValue(), depTimeO.getValue());
+        
+        // Track selection changes
+        journeyListView.getSelectionModel().selectedItemProperty().subscribe(item -> {
+            if (item instanceof ListItem.JourneyItem journeyItem) {
+                selectedJourneyProperty.set(journeyItem.journey());
             }
-        }
-
+        });
+        
         // Observe changes in depStopO or arrStopO and update container accordingly
         Runnable updateView = () -> {
             String dep = depStopO.getValue();
@@ -118,12 +325,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
         depStopO.subscribe(s -> updateView.run());
         arrStopO.subscribe(s -> updateView.run());
         updateView.run();
-
-        // Create observable value for selected journey
-        ObjectProperty<Journey> selectedJourneyProperty = new SimpleObjectProperty<>();
-        journeyListView.getSelectionModel().selectedItemProperty().subscribe(
-                selectedJourneyProperty::set);
-
+        
         return new SummaryUI(container, selectedJourneyProperty);
     }
 
@@ -135,7 +337,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
      * @param journeys the list of journeys to search
      * @param depTime the desired departure time
      */
-    private static void selectJourneyByDepartureTime(ListView<Journey> listView, List<Journey> journeys, LocalTime depTime) {
+    private static void selectJourneyByDepartureTime(ListView<ListItem> listView, List<Journey> journeys, LocalTime depTime) {
         Journey selectedJourney = null;
 
         // Find the first journey departing at or after the desired departure time
@@ -153,8 +355,17 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
         }
 
         if (selectedJourney != null) {
-            listView.getSelectionModel().select(selectedJourney);
-            listView.scrollTo(selectedJourney);
+            // Find and select the journey item in the list
+            ObservableList<ListItem> items = listView.getItems();
+            for (int i = 0; i < items.size(); i++) {
+                ListItem item = items.get(i);
+                if (item instanceof ListItem.JourneyItem journeyItem && 
+                    journeyItem.journey().equals(selectedJourney)) {
+                    listView.getSelectionModel().select(i);
+                    listView.scrollTo(i);
+                    break;
+                }
+            }
         }
     }
 
