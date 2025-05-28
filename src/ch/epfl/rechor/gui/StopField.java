@@ -99,6 +99,16 @@ public record StopField(TextField textField, ObservableValue<String> stopO) {
             }
         });
 
+         // Handle mouse selection in the results list
+        resultList.setOnMouseClicked(event -> {
+            String selectedItem = resultList.getSelectionModel().getSelectedItem();
+            if (selectedItem != null) {
+                textField.setText(selectedItem);
+                selectedStopProperty.set(selectedItem);
+                popup.hide();
+            }
+        });
+
         // Create subscriptions for focus, text changes, and position changes
         textField.focusedProperty().subscribe((isFocused) -> {
             if (isFocused) {
