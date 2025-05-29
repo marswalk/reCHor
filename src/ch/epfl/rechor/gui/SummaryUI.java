@@ -98,9 +98,17 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
      * @param isDepartureTimeO an observable value containing the toggle state for departure/arrival time
      * @param depStopO an observable value containing the departure stop
      * @param arrStopO an observable value containing the arrival stop
+     * @param journeyLoader a function that loads journeys for a specific date, departure stop, and arrival stop
      * @return a new {@code SummaryUI} instance
      */
-    public static SummaryUI create(ObservableValue<List<Journey>> journeysO, ObservableValue<LocalTime> timeO, ObservableValue<Boolean> isDepartureTimeO, ObservableValue<String> depStopO, ObservableValue<String> arrStopO) {
+    public static SummaryUI create(
+            ObservableValue<List<Journey>> journeysO, 
+            ObservableValue<LocalTime> timeO, 
+            ObservableValue<Boolean> isDepartureTimeO, 
+            ObservableValue<String> depStopO, 
+            ObservableValue<String> arrStopO,
+            JourneyLoader journeyLoader) {
+            
         BorderPane container = new BorderPane();
         ListView<ListItem> journeyListView = new ListView<>();
         journeyListView.getStylesheets().add("/summary.css");
@@ -110,70 +118,6 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
         
         // Keep track of loaded dates
         List<LocalDate> loadedDates = new ArrayList<>();
-        
-        // Function to load journeys for a specific date
-        Function<LocalDate, List<Journey>> loadJourneysForDate = (date) -> {
-            // In a real implementation, this would query a service or repository
-            // For now, we'll simulate by using the same journeys but with adjusted dates
-            List<Journey> baseJourneys = journeysO.getValue();
-            if (baseJourneys == null || baseJourneys.isEmpty()) {
-                return List.of();
-            }
-            
-            // Adjust dates of journeys to match the requested date
-            List<Journey> adjustedJourneys = new ArrayList<>();
-            LocalDate currentDate = baseJourneys.get(0).depTime().toLocalDate();
-            for (Journey journey : baseJourneys) {
-                // Calculate the time difference in days
-                long daysDifference = date.toEpochDay() - currentDate.toEpochDay();
-                
-                // Create new legs with adjusted dates
-                List<Journey.Leg> adjustedLegs = new ArrayList<>();
-                for (Journey.Leg leg : journey.legs()) {
-                    if (leg instanceof Journey.Leg.Transport transport) {
-                        // Adjust transport leg dates
-                        LocalDateTime adjustedDepTime = transport.depTime().plusDays(daysDifference);
-                        LocalDateTime adjustedArrTime = transport.arrTime().plusDays(daysDifference);
-                        
-                        // Adjust intermediate stops
-                        List<Journey.Leg.IntermediateStop> adjustedStops = new ArrayList<>();
-                        for (Journey.Leg.IntermediateStop stop : transport.intermediateStops()) {
-                            adjustedStops.add(new Journey.Leg.IntermediateStop(
-                                    stop.stop(),
-                                    stop.arrTime().plusDays(daysDifference),
-                                    stop.depTime().plusDays(daysDifference)
-                            ));
-                        }
-                        
-                        adjustedLegs.add(new Journey.Leg.Transport(
-                                transport.depStop(),
-                                adjustedDepTime,
-                                transport.arrStop(),
-                                adjustedArrTime,
-                                adjustedStops,
-                                transport.vehicle(),
-                                transport.route(),
-                                transport.destination()
-                        ));
-                    } else if (leg instanceof Journey.Leg.Foot foot) {
-                        // Adjust foot leg dates
-                        LocalDateTime adjustedDepTime = foot.depTime().plusDays(daysDifference);
-                        LocalDateTime adjustedArrTime = foot.arrTime().plusDays(daysDifference);
-                        
-                        adjustedLegs.add(new Journey.Leg.Foot(
-                                foot.depStop(),
-                                adjustedDepTime,
-                                foot.arrStop(),
-                                adjustedArrTime
-                        ));
-                    }
-                }
-                
-                adjustedJourneys.add(new Journey(adjustedLegs));
-            }
-            
-            return adjustedJourneys;
-        };
         
         // Set up the cell factory to display different types of items
         journeyListView.setCellFactory(listView -> new ListCell<>() {
@@ -216,8 +160,19 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
                                 ? loadMoreBtn.referenceDate().minusDays(1)
                                 : loadMoreBtn.referenceDate().plusDays(1);
                         
-                        // Load journeys for the target date
-                        List<Journey> newJourneys = loadJourneysForDate.apply(targetDate);
+                        // Get current departure and arrival stops
+                        String depStop = depStopO.getValue();
+                        String arrStop = arrStopO.getValue();
+                        
+                        if (depStop == null || depStop.isEmpty() || 
+                            arrStop == null || arrStop.isEmpty() ||
+                            depStop.equals(arrStop)) {
+                            return; // Can't load journeys without valid stops
+                        }
+                        
+                        // Load journeys for the target date using the actual journey loader
+                        List<Journey> newJourneys = journeyLoader.loadJourneys(targetDate, depStop, arrStop);
+                        
                         if (!newJourneys.isEmpty()) {
                             // Add the date to loaded dates
                             loadedDates.add(targetDate);
@@ -655,5 +610,21 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
 
         view.getChildren().addAll(imageView, message);
         return view;
+    }
+
+    /**
+     * Interface defining a function that loads journeys for a specific date, departure stop, and arrival stop.
+     */
+    @FunctionalInterface
+    public interface JourneyLoader {
+        /**
+         * Loads journeys for the specified date, departure stop, and arrival stop.
+         *
+         * @param date the date for which to load journeys
+         * @param depStop the departure stop
+         * @param arrStop the arrival stop
+         * @return a list of journeys for the specified parameters
+         */
+        List<Journey> loadJourneys(LocalDate date, String depStop, String arrStop);
     }
 }

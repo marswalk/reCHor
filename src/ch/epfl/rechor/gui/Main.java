@@ -150,13 +150,31 @@ public class Main extends Application {
                 queryUI.depStopO(), queryUI.arrStopO(), queryUI.dateO()
             );
 
+            // Create a journey loader function for the SummaryUI
+            SummaryUI.JourneyLoader journeyLoader = (date, depStop, arrStop) -> {
+                // Find station IDs
+                int depStationId = findStationId(depStop);
+                int arrStationId = findStationId(arrStop);
+
+                if (depStationId < 0 || arrStationId < 0) {
+                    return Collections.emptyList();
+                }
+
+                // Create a profile for the specified date and arrival station
+                Profile profile = router.profile(date, arrStationId);
+
+                // Extract journeys for the departure station
+                return JourneyExtractor.journeys(profile, depStationId);
+            };
+
             // Create summary and detail views
             SummaryUI summaryUI = SummaryUI.create(
                     journeysObservable,
                     queryUI.timeO(),
                     queryUI.isDepartureTimeO(), // NEW: Pass the departure/arrival toggle observable
                     queryUI.depStopO(),
-                    queryUI.arrStopO()
+                    queryUI.arrStopO(),
+                    journeyLoader  // Pass the journey loader function
             );
             DetailUI detailUI = DetailUI.create(summaryUI.selectedJourney());
 
