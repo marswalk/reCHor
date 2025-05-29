@@ -2,7 +2,9 @@ package ch.epfl.rechor.gui;
 
 import ch.epfl.rechor.StopIndex;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -17,6 +19,8 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -77,6 +81,7 @@ public record QueryUI(
         ObservableValue<String> arrStopO,
         ObservableValue<LocalDate> dateO,
         ObservableValue<LocalTime> timeO,
+        ObservableValue<Boolean> isDepartureTimeO, // NEW: Observable for departure/arrival toggle
         SBBClockNode clockNode
 ) {
 
@@ -351,15 +356,36 @@ public record QueryUI(
             timePopup.hide();
         });
 
+        // --- Add Time Type Selection (Departure/Arrival Toggle) ---
+        BooleanProperty isDepartureTimeProperty = new SimpleBooleanProperty(true); // Default to departure time
+
+        ToggleGroup timeTypeToggleGroup = new ToggleGroup();
+
+        ToggleButton departureTimeToggle = new ToggleButton("Départ");
+        departureTimeToggle.setToggleGroup(timeTypeToggleGroup);
+        departureTimeToggle.setSelected(true); // Default selection
+
+        ToggleButton arrivalTimeToggle = new ToggleButton("Arrivée");
+        arrivalTimeToggle.setToggleGroup(timeTypeToggleGroup);
+
+        timeTypeToggleGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == departureTimeToggle) {
+                isDepartureTimeProperty.set(true);
+            } else if (newVal == arrivalTimeToggle) {
+                isDepartureTimeProperty.set(false);
+            }
+        });
+
+        HBox timeTypeBox = new HBox(5, departureTimeToggle, arrivalTimeToggle);
+        timeTypeBox.setAlignment(Pos.CENTER_LEFT);
 
         Label timeLabel = new Label(TIME_LABEL);
-        HBox timeBoxContent = new HBox(timeLabel, timeField); // Using timeField directly
+        HBox timeBoxContent = new HBox(5, timeLabel, timeField, timeTypeBox);
         timeBoxContent.setAlignment(Pos.CENTER_LEFT);
 
         // --- Date and Time Row ---
-        HBox dateTimeBox = new HBox();
+        HBox dateTimeBox = new HBox(10, dateBox, timeBoxContent);
         dateTimeBox.setAlignment(Pos.CENTER_LEFT);
-        dateTimeBox.getChildren().addAll(dateBox, timeBoxContent);
 
         queryControlsVBox.getChildren().addAll(stopsBox, dateTimeBox);
 
@@ -381,6 +407,7 @@ public record QueryUI(
                 arrivalField.stopO(),
                 datePicker.valueProperty(),
                 selectedTimeProperty, // This property is central
+                isDepartureTimeProperty, // NEW: Pass the departure/arrival toggle observable
                 sbbClock
         );
     }

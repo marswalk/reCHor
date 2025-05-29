@@ -94,12 +94,13 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
      * the user to select a journey.
      *
      * @param journeysO an observable value containing the list of journeys to display
-     * @param depTimeO an observable value containing the desired departure time
+     * @param timeO an observable value containing the desired time
+     * @param isDepartureTimeO an observable value containing the toggle state for departure/arrival time
      * @param depStopO an observable value containing the departure stop
      * @param arrStopO an observable value containing the arrival stop
      * @return a new {@code SummaryUI} instance
      */
-    public static SummaryUI create(ObservableValue<List<Journey>> journeysO, ObservableValue<LocalTime> depTimeO, ObservableValue<String> depStopO, ObservableValue<String> arrStopO) {
+    public static SummaryUI create(ObservableValue<List<Journey>> journeysO, ObservableValue<LocalTime> timeO, ObservableValue<Boolean> isDepartureTimeO, ObservableValue<String> depStopO, ObservableValue<String> arrStopO) {
         BorderPane container = new BorderPane();
         ListView<ListItem> journeyListView = new ListView<>();
         journeyListView.getStylesheets().add("/summary.css");
@@ -291,18 +292,18 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
             
             journeyListView.setItems(items);
             
-            // Select appropriate journey based on departure time
-            if (depTimeO.getValue() != null) {
-                selectJourneyByDepartureTime(journeyListView, newJourneys, depTimeO.getValue());
-            }
+            // Select appropriate journey based on time and time type
+            updateSelectedJourney(journeyListView, newJourneys, timeO.getValue(), isDepartureTimeO.getValue());
         });
         
-        // When departure time changes, select the appropriate journey
-        depTimeO.subscribe((newTime) -> {
-            List<Journey> journeys = journeysO.getValue();
-            if (journeys != null && !journeys.isEmpty() && newTime != null) {
-                selectJourneyByDepartureTime(journeyListView, journeys, newTime);
-            }
+        // When time changes, update the selected journey
+        timeO.subscribe((newTime) -> {
+            updateSelectedJourney(journeyListView, journeysO.getValue(), newTime, isDepartureTimeO.getValue());
+        });
+
+        // When time type changes, update the selected journey
+        isDepartureTimeO.subscribe((isDeparture) -> {
+            updateSelectedJourney(journeyListView, journeysO.getValue(), timeO.getValue(), isDeparture);
         });
         
         // Track selection changes
@@ -331,36 +332,50 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
     }
 
     /**
-     * Selects the journey in the list view that departs at or after the specified departure time.
-     * If no such journey exists, the last journey in the list is selected.
+     * Updates the selected journey in the list view based on the specified time and whether
+     * it's a departure or arrival time.
      *
      * @param listView the {@link ListView} displaying the journeys
-     * @param journeys the list of journeys to search
-     * @param depTime the desired departure time
+     * @param journeys the list of available journeys
+     * @param time the reference time for selection
+     * @param isDepartureTime true if {@code time} is a departure time, false if it's an arrival time
      */
-    private static void selectJourneyByDepartureTime(ListView<ListItem> listView, List<Journey> journeys, LocalTime depTime) {
+    private static void updateSelectedJourney(
+            ListView<ListItem> listView,
+            List<Journey> journeys,
+            LocalTime time,
+            Boolean isDepartureTime) {
+
+        if (journeys == null || journeys.isEmpty() || time == null || isDepartureTime == null) {
+            return;
+        }
+
         Journey selectedJourney = null;
 
-        // Find the first journey departing at or after the desired departure time
-        for (Journey journey : journeys) {
-            LocalTime journeyDepTime = journey.depTime().toLocalTime();
-            if (!journeyDepTime.isBefore(depTime)) {
-                selectedJourney = journey;
-                break;
+        if (isDepartureTime) {
+            // Select journey based on departure time
+            for (Journey journey : journeys) {
+                if (!journey.depTime().toLocalTime().isBefore(time)) {
+                    selectedJourney = journey;
+                    break;
+                }
+            }
+        } else {
+            // Select journey based on arrival time
+            for (Journey journey : journeys) {
+                if (!journey.arrTime().toLocalTime().isAfter(time)) {
+                    selectedJourney = journey;
+                } else {
+                    break; // Stop once we find a journey arriving after the specified time
+                }
             }
         }
 
-        // If no journey was found, select the last one
-        if (selectedJourney == null && !journeys.isEmpty()) {
-            selectedJourney = journeys.getLast();
-        }
-
         if (selectedJourney != null) {
-            // Find and select the journey item in the list
             ObservableList<ListItem> items = listView.getItems();
             for (int i = 0; i < items.size(); i++) {
                 ListItem item = items.get(i);
-                if (item instanceof ListItem.JourneyItem journeyItem && 
+                if (item instanceof ListItem.JourneyItem journeyItem &&
                     journeyItem.journey().equals(selectedJourney)) {
                     listView.getSelectionModel().select(i);
                     listView.scrollTo(i);
@@ -601,7 +616,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
 
                 if (circles.size() >= 2) {
                     // First circle is departure
-                    Circle departureCircle = (Circle) circles.getFirst();
+                    Circle departureCircle = (Circle) circles.get(0);
                     departureCircle.setCenterX(LINE_MARGIN);
                     departureCircle.setCenterY(height / 2);
 

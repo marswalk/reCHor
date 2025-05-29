@@ -153,6 +153,7 @@ public class Main extends Application {
             SummaryUI summaryUI = SummaryUI.create(
                     journeysObservable,
                     queryUI.timeO(),
+                    queryUI.isDepartureTimeO(), // NEW: Pass the departure/arrival toggle observable
                     queryUI.depStopO(),
                     queryUI.arrStopO()
             );
