@@ -70,7 +70,6 @@ import java.util.stream.IntStream;
  * @see javafx.stage.Popup
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
- * @author AI Assistant (SBB Clock Integration & Enhanced Pop-out Time Selector with TextField)
  */
 public record QueryUI(
         Node rootNode,
@@ -81,12 +80,88 @@ public record QueryUI(
         SBBClockNode clockNode
 ) {
 
+    // Time formatting constants
     private static final DateTimeFormatter TIME_DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final String TIME_FORMAT_PATTERN_HHMM = "HH:mm";
+    private static final String TIME_FORMAT_PATTERN_HMM = "H:mm";
+
+    // Regex patterns for time input
+    private static final String FOUR_DIGIT_PATTERN = "\\d{4}";
+    private static final String THREE_DIGIT_PATTERN = "\\d{3}";
+
+    // CSS and styling constants
+    private static final String CSS_FILE = "query.css";
+    private static final String TIME_PICKER_POPUP_CLASS = "time-picker-popup";
+    private static final String TIME_LIST_VIEW_CLASS = "time-list-view";
+    private static final String OK_BUTTON_CLASS = "ok-button";
+    private static final String CANCEL_BUTTON_CLASS = "cancel-button";
+
+    // Text constants
+    private static final String DEPARTURE_PROMPT = "Nom de l'arrêt de départ";
+    private static final String ARRIVAL_PROMPT = "Nom de l'arrêt d'arrivée";
+    private static final String TIME_PROMPT = "HH:mm";
+    private static final String DEPARTURE_LABEL = "Départ\u202f:";
+    private static final String ARRIVAL_LABEL = "Arrivée\u202f:";
+    private static final String DATE_LABEL = "Date\u202f:";
+    private static final String TIME_LABEL = "Heure\u202f:";
+    private static final String SWAP_BUTTON_TEXT = "↔";
+    private static final String SWAP_TOOLTIP_TEXT = "Inverser départ et arrivée";
+    private static final String OK_BUTTON_TEXT = "OK";
+    private static final String CANCEL_BUTTON_TEXT = "Annuler";
+    private static final String POPUP_HEADER_TEXT = "Sélectionner l'heure";
+    private static final String TIME_SEPARATOR = ":";
+
+    // ID constants
+    private static final String DEP_STOP_ID = "depStop";
+    private static final String ARR_STOP_ID = "arrStop";
+    private static final String DATE_ID = "date";
+    private static final String TIME_FIELD_ID = "timeField";
+
+    // Dimension constants
+    private static final int CLOCK_SIZE = 80;
+    private static final int CLOCK_MIN_SIZE = 60;
+    private static final int TIME_FIELD_WIDTH = 90;
+    private static final int LIST_VIEW_HEIGHT = 180;
+    private static final int LIST_VIEW_WIDTH = 90;
+
+    // Spacing constants
+    private static final int POPUP_SPACING = 15;
+    private static final int POPUP_PADDING = 20;
+    private static final int LIST_CELL_PADDING_V = 4;
+    private static final int LIST_CELL_PADDING_H = 0;
+    private static final int POPUP_OFFSET = 5;
+    private static final int SCROLL_OFFSET = 2;
+    private static final int SEPARATOR_PADDING = 5;
+
+    // Time range constants
+    private static final int HOURS_IN_DAY = 24;
+    private static final int MINUTES_IN_HOUR = 60;
+    private static final int TIME_START = 0;
+
+    // Font size constants
+    private static final int LIST_CELL_FONT_SIZE = 14;
+    private static final int HEADER_FONT_SIZE = 18;
+    private static final int SEPARATOR_FONT_SIZE = 18;
+
+    // Style strings
+    private static final String LIST_CELL_STYLE = String.format("-fx-padding: %dpx %dpx; -fx-font-size: %dpx;",
+            LIST_CELL_PADDING_V, LIST_CELL_PADDING_H, LIST_CELL_FONT_SIZE);
+    private static final String POPUP_STYLE =
+            "-fx-background-color: white;" +
+                    "-fx-border-color: #B0B0B0;" +
+                    "-fx-border-width: 1px;" +
+                    "-fx-background-radius: 6px;" +
+                    "-fx-border-radius: 6px;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0.5, 0, 2);";
+    private static final String HEADER_STYLE = String.format("-fx-font-size: %dpx; -fx-font-weight: bold; -fx-text-fill: #333;",
+            HEADER_FONT_SIZE);
+    private static final String SEPARATOR_STYLE = String.format("-fx-font-size: %dpx; -fx-font-weight: bold; -fx-padding: 0 %dpx;",
+            SEPARATOR_FONT_SIZE, SEPARATOR_PADDING);
 
     private static class TimeListCell extends ListCell<Integer> {
         public TimeListCell() {
             setAlignment(Pos.CENTER);
-            setStyle("-fx-padding: 4px 0px; -fx-font-size: 14px;");
+            setStyle(LIST_CELL_STYLE);
         }
         @Override
         protected void updateItem(Integer item, boolean empty) {
@@ -97,8 +172,8 @@ public record QueryUI(
 
     // Custom StringConverter for the TextField to handle HHmm format and general parsing
     private static class SmartTimeConverter extends StringConverter<LocalTime> {
-        private final DateTimeFormatter parseFormatterHHMM = DateTimeFormatter.ofPattern("HH:mm");
-        private final DateTimeFormatter parseFormatterHMM = DateTimeFormatter.ofPattern("H:mm");
+        private final DateTimeFormatter parseFormatterHHMM = DateTimeFormatter.ofPattern(TIME_FORMAT_PATTERN_HHMM);
+        private final DateTimeFormatter parseFormatterHMM = DateTimeFormatter.ofPattern(TIME_FORMAT_PATTERN_HMM);
 
         @Override
         public String toString(LocalTime time) {
@@ -111,13 +186,11 @@ public record QueryUI(
                 return null; // Allow empty field
             }
             String toParse = string.trim();
-            if (toParse.matches("\\d{4}")) { // "1234" -> "12:34"
-                toParse = toParse.substring(0, 2) + ":" + toParse.substring(2, 4);
-            } else if (toParse.matches("\\d{3}")) { // "123" -> "01:23"
-                toParse = "0" + toParse.substring(0,1) + ":" + toParse.substring(1,3);
+            if (toParse.matches(FOUR_DIGIT_PATTERN)) { // "1234" -> "12:34"
+                toParse = toParse.substring(0, 2) + TIME_SEPARATOR + toParse.substring(2, 4);
+            } else if (toParse.matches(THREE_DIGIT_PATTERN)) { // "123" -> "01:23"
+                toParse = "0" + toParse.substring(0,1) + TIME_SEPARATOR + toParse.substring(1,3);
             }
-
-
             try {
                 return LocalTime.parse(toParse, parseFormatterHHMM);
             } catch (DateTimeParseException e1) {
@@ -133,23 +206,22 @@ public record QueryUI(
 
 
     public static QueryUI create(StopIndex stopIndex) {
-        VBox queryControlsVBox = new VBox(5);
-        queryControlsVBox.getStylesheets().add("query.css");
-        queryControlsVBox.setPadding(new Insets(10));
+        VBox queryControlsVBox = new VBox();
+        queryControlsVBox.getStylesheets().add(CSS_FILE);
 
         // --- Departure and Arrival Stops (Same as before) ---
         StopField departureField = StopField.create(stopIndex);
-        departureField.textField().setPromptText("Nom de l'arrêt de départ");
-        departureField.textField().setId("depStop");
-        Label depLabel = new Label("Départ\u202f:");
+        departureField.textField().setPromptText(DEPARTURE_PROMPT);
+        departureField.textField().setId(DEP_STOP_ID);
+        Label depLabel = new Label(DEPARTURE_LABEL);
 
         StopField arrivalField = StopField.create(stopIndex);
-        arrivalField.textField().setPromptText("Nom de l'arrêt d'arrivée");
-        arrivalField.textField().setId("arrStop");
-        Label arrLabel = new Label("Arrivée\u202f:");
+        arrivalField.textField().setPromptText(ARRIVAL_PROMPT);
+        arrivalField.textField().setId(ARR_STOP_ID);
+        Label arrLabel = new Label(ARRIVAL_LABEL);
 
-        Button swapButton = new Button("↔");
-        swapButton.setTooltip(new javafx.scene.control.Tooltip("Inverser départ et arrivée"));
+        Button swapButton = new Button(SWAP_BUTTON_TEXT);
+        swapButton.setTooltip(new javafx.scene.control.Tooltip(SWAP_TOOLTIP_TEXT));
         swapButton.setOnAction(e -> {
             String dep = departureField.textField().getText();
             String arr = arrivalField.textField().getText();
@@ -157,22 +229,22 @@ public record QueryUI(
             arrivalField.setTo(dep);
         });
 
-        HBox depBox = new HBox(5, depLabel, departureField.textField());
+        HBox depBox = new HBox(depLabel, departureField.textField());
         depBox.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(departureField.textField(), Priority.ALWAYS);
 
-        HBox arrBox = new HBox(5, arrLabel, arrivalField.textField());
+        HBox arrBox = new HBox(arrLabel, arrivalField.textField());
         arrBox.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(arrivalField.textField(), Priority.ALWAYS);
 
-        HBox stopsBox = new HBox(10, depBox, swapButton, arrBox);
+        HBox stopsBox = new HBox(depBox, swapButton, arrBox);
         stopsBox.setAlignment(Pos.CENTER_LEFT);
 
         // --- Date Picker (Same as before) ---
         DatePicker datePicker = new DatePicker(LocalDate.now());
-        datePicker.setId("date");
-        Label dateLabel = new Label("Date\u202f:");
-        HBox dateBox = new HBox(5, dateLabel, datePicker);
+        datePicker.setId(DATE_ID);
+        Label dateLabel = new Label(DATE_LABEL);
+        HBox dateBox = new HBox(dateLabel, datePicker);
         dateBox.setAlignment(Pos.CENTER_LEFT);
 
         // --- Time Input Field with Pop-out ListView Selector ---
@@ -180,9 +252,9 @@ public record QueryUI(
 
         // TextField for time input
         TextField timeField = new TextField();
-        timeField.setPromptText("HH:mm");
-        timeField.setPrefWidth(90); // Slightly wider for "HH:mm"
-        timeField.setId("timeField");
+        timeField.setPromptText(TIME_PROMPT);
+        timeField.setPrefWidth(TIME_FIELD_WIDTH); // Slightly wider for "HH:mm"
+        timeField.setId(TIME_FIELD_ID);
 
         TextFormatter<LocalTime> timeTextFormatter = new TextFormatter<>(
                 new SmartTimeConverter(),
@@ -207,46 +279,38 @@ public record QueryUI(
             }
         });
 
-
         // Popup content (ListViews for hours and minutes)
-        VBox popupLayout = new VBox(15);
-        popupLayout.setPadding(new Insets(20));
-        popupLayout.setStyle(
-                "-fx-background-color: white;" +
-                        "-fx-border-color: #B0B0B0;" +
-                        "-fx-border-width: 1px;" +
-                        "-fx-background-radius: 6px;" +
-                        "-fx-border-radius: 6px;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0.5, 0, 2);"
-        );
-        popupLayout.getStyleClass().add("time-picker-popup");
+        VBox popupLayout = new VBox(POPUP_SPACING);
+        popupLayout.setPadding(new Insets(POPUP_PADDING));
+        popupLayout.setStyle(POPUP_STYLE);
+        popupLayout.getStyleClass().add(TIME_PICKER_POPUP_CLASS);
 
-        Label popupHeader = new Label("Sélectionner l'heure");
-        popupHeader.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #333;");
+        Label popupHeader = new Label(POPUP_HEADER_TEXT);
+        popupHeader.setStyle(HEADER_STYLE);
 
-        ListView<Integer> hourListView = new ListView<>(FXCollections.observableArrayList(IntStream.range(0, 24).boxed().collect(Collectors.toList())));
+        ListView<Integer> hourListView = new ListView<>(FXCollections.observableArrayList(IntStream.range(TIME_START, HOURS_IN_DAY).boxed().collect(Collectors.toList())));
         hourListView.setCellFactory(lv -> new TimeListCell());
-        hourListView.setPrefHeight(180);
-        hourListView.setPrefWidth(90);
-        hourListView.getStyleClass().add("time-list-view");
+        hourListView.setPrefHeight(LIST_VIEW_HEIGHT);
+        hourListView.setPrefWidth(LIST_VIEW_WIDTH);
+        hourListView.getStyleClass().add(TIME_LIST_VIEW_CLASS);
 
-        ListView<Integer> minuteListView = new ListView<>(FXCollections.observableArrayList(IntStream.range(0, 60).boxed().collect(Collectors.toList())));
+        ListView<Integer> minuteListView = new ListView<>(FXCollections.observableArrayList(IntStream.range(TIME_START, MINUTES_IN_HOUR).boxed().collect(Collectors.toList())));
         minuteListView.setCellFactory(lv -> new TimeListCell());
-        minuteListView.setPrefHeight(180);
-        minuteListView.setPrefWidth(90);
-        minuteListView.getStyleClass().add("time-list-view");
+        minuteListView.setPrefHeight(LIST_VIEW_HEIGHT);
+        minuteListView.setPrefWidth(LIST_VIEW_WIDTH);
+        minuteListView.getStyleClass().add(TIME_LIST_VIEW_CLASS);
 
-        HBox listSelectorsBox = new HBox(5, hourListView, new Label(":"), minuteListView);
-        ((Label)listSelectorsBox.getChildren().get(1)).setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-padding: 0 5px;");
+        HBox listSelectorsBox = new HBox(hourListView, new Label(TIME_SEPARATOR), minuteListView);
+        ((Label)listSelectorsBox.getChildren().get(1)).setStyle(SEPARATOR_STYLE);
         listSelectorsBox.setAlignment(Pos.CENTER);
 
-        Button okButton = new Button("OK");
+        Button okButton = new Button(OK_BUTTON_TEXT);
         okButton.setDefaultButton(true);
-        okButton.getStyleClass().add("ok-button");
-        Button cancelButton = new Button("Annuler");
-        cancelButton.getStyleClass().add("cancel-button");
+        okButton.getStyleClass().add(OK_BUTTON_CLASS);
+        Button cancelButton = new Button(CANCEL_BUTTON_TEXT);
+        cancelButton.getStyleClass().add(CANCEL_BUTTON_CLASS);
 
-        HBox buttonsPopupBox = new HBox(10, okButton, cancelButton);
+        HBox buttonsPopupBox = new HBox(okButton, cancelButton);
         buttonsPopupBox.setAlignment(Pos.CENTER_RIGHT);
 
         popupLayout.getChildren().addAll(popupHeader, listSelectorsBox, buttonsPopupBox);
@@ -262,12 +326,12 @@ public record QueryUI(
                 if (currentTimeInField == null) currentTimeInField = LocalTime.now(); // Fallback
 
                 hourListView.getSelectionModel().select(currentTimeInField.getHour());
-                hourListView.scrollTo(Math.max(0, currentTimeInField.getHour() - 2));
+                hourListView.scrollTo(Math.max(TIME_START, currentTimeInField.getHour() - SCROLL_OFFSET));
                 minuteListView.getSelectionModel().select(currentTimeInField.getMinute());
-                minuteListView.scrollTo(Math.max(0, currentTimeInField.getMinute() - 2));
+                minuteListView.scrollTo(Math.max(TIME_START, currentTimeInField.getMinute() - SCROLL_OFFSET));
 
                 Bounds fieldBounds = timeField.localToScreen(timeField.getBoundsInLocal());
-                timePopup.show(timeField.getScene().getWindow(), fieldBounds.getMinX(), fieldBounds.getMaxY() + 5);
+                timePopup.show(timeField.getScene().getWindow(), fieldBounds.getMinX(), fieldBounds.getMaxY() + POPUP_OFFSET);
             }
         });
 
@@ -288,12 +352,12 @@ public record QueryUI(
         });
 
 
-        Label timeLabel = new Label("Heure\u202f:");
-        HBox timeBoxContent = new HBox(5, timeLabel, timeField); // Using timeField directly
+        Label timeLabel = new Label(TIME_LABEL);
+        HBox timeBoxContent = new HBox(timeLabel, timeField); // Using timeField directly
         timeBoxContent.setAlignment(Pos.CENTER_LEFT);
 
         // --- Date and Time Row ---
-        HBox dateTimeBox = new HBox(20);
+        HBox dateTimeBox = new HBox();
         dateTimeBox.setAlignment(Pos.CENTER_LEFT);
         dateTimeBox.getChildren().addAll(dateBox, timeBoxContent);
 
@@ -302,13 +366,12 @@ public record QueryUI(
         // --- SBB Clock (Same as before) ---
         SBBClockNode sbbClock = new SBBClockNode();
         Node clockView = sbbClock.getView();
-        ((StackPane) clockView).setPrefSize(80, 80);
-        ((StackPane) clockView).setMinSize(60,60);
+        ((StackPane) clockView).setPrefSize(CLOCK_SIZE, CLOCK_SIZE);
+        ((StackPane) clockView).setMinSize(CLOCK_MIN_SIZE, CLOCK_MIN_SIZE);
 
         // --- Main Layout (Same as before) ---
-        HBox mainLayout = new HBox(10);
+        HBox mainLayout = new HBox();
         mainLayout.setAlignment(Pos.CENTER_LEFT);
-        mainLayout.setPadding(new Insets(5));
         mainLayout.getChildren().addAll(queryControlsVBox, clockView);
         HBox.setHgrow(queryControlsVBox, Priority.ALWAYS);
 
