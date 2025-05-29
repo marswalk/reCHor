@@ -318,6 +318,7 @@ public record SummaryUI(Node rootNode, ObservableValue<Journey> selectedJourneyO
             String arr = arrStopO.getValue();
             if (dep != null && arr != null && dep.equals(arr) && !dep.isEmpty()) {
                 container.setCenter(createIdenticalStopsView());
+                selectedJourneyProperty.set(null); // Clear detail UI
             } else {
                 container.setCenter(journeyListView);
             }
