@@ -72,6 +72,7 @@ import java.util.stream.IntStream;
  * @see javafx.scene.control.TextField
  * @see javafx.scene.control.TextFormatter
  * @see javafx.stage.Popup
+ *
  * @author Guanting Wen (392412)
  * @author Ben Fall (373176)
  */

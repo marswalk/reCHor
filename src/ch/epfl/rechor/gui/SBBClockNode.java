@@ -20,6 +20,8 @@ import java.util.Calendar;
  * seconds hand movement and minute jump.
  * It uses SVG paths for rendering the clock face and hands.
  * This version displays the light background clock face.
+ *
+ * @author Guanting Wen (392412)
  */
 public class SBBClockNode {
 

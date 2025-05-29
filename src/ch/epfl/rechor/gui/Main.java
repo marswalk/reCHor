@@ -47,7 +47,8 @@ import java.util.*;
  * @see Router
  * @see JourneyExtractor
  *
- * 
+ * @author Guanting Wen (392412)
+ * @author Ben Fall (373176)
  */
 public class Main extends Application {
 
