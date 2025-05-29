@@ -42,3 +42,23 @@
     -fx-padding: 0;
     -fx-background-color: transparent;
 }
+
+/* Style for selected journey items */
+.list-cell:selected .journey {
+    -fx-border-color: #0096C9;
+    -fx-border-width: 2px;
+    -fx-border-radius: 4px;
+}
+
+/* Style for selected journey items when ListView is focused */
+.list-view:focused .list-cell:selected .journey {
+    -fx-border-color: #0078D4;
+    -fx-border-width: 2px;
+    -fx-border-radius: 4px;
+}
+
+/* Ensure other list items (date headers, buttons) don't get selection styling */
+.list-cell:selected .date-header,
+.list-cell:selected .load-more-button {
+    -fx-border-width: 0;
+}
