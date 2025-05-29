@@ -29,6 +29,20 @@
     -fx-stroke-width: 1.5;
 }
 
+/* Style for load more buttons */
+.load-more-button {
+    -fx-background-color: #f0f0f0; /* Match date-header background */
+    -fx-padding: 8px 4px;          /* Match date-header padding */
+    -fx-font-weight: bold;         /* Match date-header font weight */
+    -fx-alignment: center;         /* Center text within the button */
+    -fx-max-width: infinity;       /* Make button full width */
+    -fx-border-color: #cccccc;     /* Match date-header border color */
+    -fx-border-width: 0 0 1px 0; /* Match date-header bottom border */
+    -fx-background-radius: 0;      /* Remove default button corner rounding */
+    -fx-border-radius: 0;        /* Remove default button corner rounding */
+    -fx-text-fill: black;          /* Ensure text visibility */
+}
+
 /* Date header styles */
 .date-header {
     -fx-font-weight: bold;
