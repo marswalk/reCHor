@@ -8,6 +8,17 @@ ReCHor est une application Java permettant de rechercher des trajets optimaux en
 
 Le projet applique une recherche **multi-critères** (notamment heure de départ/arrivée et nombre de changements) et retourne des relations **Pareto-optimales**.
 
+## Introduction visuelle (énoncé du professeur)
+
+### Figure 1 — Interface graphique de ReCHor
+![Interface graphique de ReCHor](docs/images/rechor-gui.png)
+
+### Figure 2 — Relation visualisée sur uMap
+![Relation visualisée sur uMap](docs/images/umap.png)
+
+### Figure 3 — Relation exportée dans un calendrier (iCalendar)
+![Relation dans Calendar (macOS)](docs/images/icalendar.png)
+
 ## Contexte du cours
 
 D’après l’énoncé du projet :
@@ -58,6 +69,7 @@ Ces boutons déclenchent le chargement de trajets pour `date - 1` ou `date + 1`.
 ## Structure (aperçu)
 
 - `src/ch/epfl/rechor/gui/` : composants d’interface (requête, résumé, horloge, etc.)
+- `docs/images/` : captures d’écran utilisées dans le README
 - Ressources CSS pour le styling des vues.
 
 ## Notes
