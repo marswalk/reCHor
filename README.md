@@ -19,19 +19,8 @@ Le projet applique une recherche **multi-critères** (notamment heure de départ
 ### Figure 3 — Relation exportée dans un calendrier (iCalendar)
 ![Relation dans Calendar (macOS)](docs/images/icalendar.png)
 
-## Contexte du cours
 
-D’après l’énoncé du projet :
-
-- Le projet annuel s’appelle **ReCHor** (CS-108).
-- Objectif : proposer des itinéraires comparables à cff.ch / search.ch / bahn.de.
-- Développement en étapes hebdomadaires :
-  - étapes 1 à 6,
-  - étapes 7 à 11,
-  - étape 12 optionnelle.
-- Le projet compte pour **300 points** sur les 500 points du semestre.
-
-## Fonctionnalités implémentées (observées dans le code)
+## Fonctionnalités implémentées
 
 ### 1) Recherche d’itinéraires
 
